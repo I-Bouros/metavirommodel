@@ -15,15 +15,13 @@ class Metaviromodel(pints.ForwardModel):
     Base class for the forward simulation of the epidemic transmission dynamic
     of a population of rodents.
 
-    Three types of individuals are considered - those which present mutations
-    that give selectional advantage irrespective of environmental conditions
-    (A), those which present mutations that give selectional advantage
-    dependent on environmental conditions (B) and the wild type cells (WT).
+    Three types of individuals are considered based on their seroligcal status
+    - susceptible individuals (S), infectious (I) and recovered (R).
 
-    Cells decay at the same rate independent of their type and devide with
-    rates which illsutate their selectional advantage. A wild type cell (WT)
-    can mutate to a cell of type A, respectively a cell of type B with constant
-    given rates of mutation.
+    Susceptible individuals are born at a constant rate and die at the same
+    rate as those recovered. A different death rate due to diesease is
+    considered for the infected individuals. A susceptible individuals goes on
+    to become infected at a constant rate.
 
     The system of equations that describe the isolated possible events that can
     occur
@@ -114,9 +112,9 @@ class Metaviromodel(pints.ForwardModel):
     def one_step_gillespie(self, i_S, i_I, i_R):
         """
         Computes one step in the Gillespie algorithm to determine the
-        counts of the different species of cells living in the tumor at
-        present. Returns time to next reaction and the tuple state of the
-        system.
+        counts of the different types of individuals present in the population
+        at present. Returns time to next reaction and the tuple state of the
+        system, as well as the type of reaction that occured.
 
         Parameters
         ----------
@@ -178,7 +176,7 @@ class Metaviromodel(pints.ForwardModel):
 
     def gillespie_algorithm_fixed_times(self, start_time, end_time):
         """
-        Runs the Gillespie algorithm for the STEM cell population
+        Runs the Gillespie algorithm for the population epidemic dynamics
         for the given times.
 
         Parameters
@@ -264,6 +262,31 @@ class Metaviromodel(pints.ForwardModel):
 
     def ct_model(self, parameters_ct, t):
         r"""
+        Sample the corresponding Ct value for an infected individual with
+        respect to its time since infection.
+
+        Parameters
+        ----------
+        parameters_ct
+            (list) List of parameters governing the Ct value model dynamics:
+            the times from infection to initial viral growth (t_eclipse),
+            from initial viral growth to peak viral load (t_peak), from peak
+            viral load to secondary waning phase (t_switch), from secondary
+            waning phase until Gumbel distribution reaches its minimum scale
+            parameter (t_mod) and finally from infection until modal Ct value
+            is equal to the limit of detection (t_LOD), the Ct values
+            associated with the time of infection (c_zero), peak viral load
+            (c_peak), the deubut of the secondary waning phase at
+            :math:`t_eclipse + t_peak + t_switch` (c_switch) and the limit
+            of detection of Ct value (c_LOD), the multiplicative factor
+            applied to scale parameter for the Gumbel distribution starting at
+            time :math:`t_eclipse + t_peak + t_switch + t_scale` (s_mod), and
+            the initial scale parameter for the Gumbel distribution until time
+            :math:`t_eclipse + t_peak + t_switch` (sigma_obs) respectively.
+        t
+            (float) time since infection of the individuals for which we
+            claculate its Ct value.
+
         """
         # Read times of main points of behaviour change
         t_eclipse, t_peak, t_switch, t_mod, t_LOD = parameters_ct[:5]
@@ -306,18 +329,18 @@ class Metaviromodel(pints.ForwardModel):
     def simulate_fixed_times(
             self, parameters, start_time, end_time):
         r"""
-        Computes the number of each type of cell in a given tumor between the
-        given time points.
+        Computes the number of each type of individuals in the population
+        between the given time points.
 
         Parameters
         ----------
         parameters
-            (list) List of quantities that characterise the STEM cells cycle in
-            this order: the initial counts for each type of cell (i_S, i_I,
-            i_R), the growth rate for the WT, the boosts in selection given to
-            the mutated A and B variant respectively and the mutation rates
-            with which a WT cell transforms into an A and B variant,
-            respectively.
+            (list) List of quantities that characterise the epidemic dynamics
+            in this order: the initial counts for each compartment (i_S, i_I,
+            i_R), the birth rate of susceptibles, the death rate on suscepible
+            (and recovered, :math:`\mu`) and the infectious individuals (
+            :math:`\nu`), the transmission rate (:math:`\beta`) and the
+            recovery rate (:math:`\gamma`) respectively.
         start_time
             (int) Time from which we start the simulation of the tumor.
         end_time
@@ -388,9 +411,9 @@ class Metaviromodel(pints.ForwardModel):
         for _ in range(3):
             if not isinstance(parameters[_], int):
                 raise TypeError(
-                    'Initial cell count must be integer.')
+                    'Initial compartment count must be integer.')
             if parameters[_] < 0:
-                raise ValueError('Initial cell count must be => 0.')
+                raise ValueError('Initial compartment count must be => 0.')
         if not isinstance(parameters[3], (float, int)):
             raise TypeError(
                 'Birth rate must be integer or float.')
