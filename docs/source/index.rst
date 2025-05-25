@@ -5,7 +5,7 @@
    contain the root `toctree` directive.
 
 Welcome to metavirommodel's documentation!
-=====================================
+==========================================
 The metavirommodel source code is hosted on GitHub_.
 
 
