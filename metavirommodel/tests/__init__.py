@@ -1,8 +1,12 @@
 #
+# Test module for metavirommodel.
+#
 # This file is part of metavirommodel
 # (https://github.com/SABS-R3-Epidemiology/metavirommodel/)
 # which is released under the BSD 3-clause license. See accompanying LICENSE.md
 # for copyright notice and full license details.
 #
-
-from ._models import Metaviromodel  # noqa
+# To run all tests, use ``python -m unittest discover``.
+#
+# To run a particular test, use e.g.
+#  ``python -m unittest metavirommodel.tests.test_models``.

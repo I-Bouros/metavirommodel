@@ -2,15 +2,11 @@
 # metavirommodel setuptools script
 #
 # This file is part of metavirommodel
-# (https://github.com/SABS-R3-Epidemiology/metavirommodel.git) which is released
-# under the BSD 3-clause license. See accompanying LICENSE.md for copyright
-# notice and full license details.
+# (https://github.com/SABS-R3-Epidemiology/metavirommodel.git) which is
+# released under the BSD 3-clause license. See accompanying LICENSE.md
+# for copyright notice and full license details.
 #
-from setuptools import setup, find_packages, Extension
-import os
-
-ext = Extension(
-    'fast_posterior', [os.path.join('metavirommodel', 'fast_posterior.c')])
+from setuptools import setup, find_packages
 
 
 def get_version():
@@ -71,22 +67,10 @@ setup(
         # Dependencies go here!
         'matplotlib',
         'numpy',
-        'dash',
-        'dash_bootstrap_components',
-        'dash_daq',
-        'dash_defer_js_import',
         'pandas',
         'plotly',
         'scipy',
-        'pints',
-        'numexpr',
-        'diskcache',
-        'multiprocess',
-        'psutil',
-        'fast_poibin',
-        'cmdstanpy',
-        'arviz',
-        'seaborn'
+        'pints'
     ],
     python_requires='>=3.9',
     extras_require={
@@ -101,6 +85,5 @@ setup(
             # Flake8 for code style checking
             'flake8>=3',
         ],
-    },
-    ext_modules=[ext],
+    }
 )
