@@ -1,6 +1,6 @@
 #
 # This file is part of metavirommodel
-# (https://github.com/SABS-R3-Epidemiology/metavirommodel/)
+# (https://github.com/I-Bouros/metavirommodel)
 # which is released under the BSD 3-clause license. See accompanying LICENSE.md
 # for copyright notice and full license details.
 #
@@ -24,7 +24,7 @@ class TestMetaviromodel(unittest.TestCase):
         ])
         self.assertEqual(model._n_outputs, 3)
         self.assertEqual(model._n_parameters, 8)
-        np.testing.assert_array_equal(model._output_indices, np.arange(5))
+        np.testing.assert_array_equal(model._output_indices, np.arange(3))
 
     def test_n_outputs(self):
         model = mm.Metaviromodel()
