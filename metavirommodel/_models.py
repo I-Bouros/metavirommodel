@@ -137,42 +137,43 @@ class Metaviromodel(pints.ForwardModel):
 
         self.N = sum((i_S, i_I, i_R))
 
-        # Compute propensities
-        propens_1 = self.beta * i_S * i_I / self.N
-        propens_2 = self.gamma * i_I
-        propens_3 = self.theta
-        propens_4 = self.mu_S * i_S
-        propens_5 = self.mu_I * i_I
-        propens_6 = self.mu_S * i_R
-
-        propens = np.array([
-            propens_1, propens_2, propens_3, propens_4,
-            propens_5, propens_6])
-        sum_propens = np.empty(propens.shape)
-
         new_infec = 0
 
-        if np.sum(propens) > 0:
-            for e in range(propens.shape[0]):
-                sum_propens[e] = np.sum(propens[:(e+1)]) / np.sum(propens)
+        # Compute propensities
+        if self.N > 0:
+            propens_1 = self.beta * i_S * i_I / self.N
+            propens_2 = self.gamma * i_I
+            propens_3 = self.theta
+            propens_4 = self.mu_S * i_S
+            propens_5 = self.mu_I * i_I
+            propens_6 = self.mu_S * i_R
 
-            if u < sum_propens[0]:
-                i_S += -1
-                i_I += 1
-                new_infec = 1
-            elif (u >= sum_propens[0]) and (u < sum_propens[1]):
-                i_I += -1
-                i_R += 1
-                new_infec = -1
-            elif (u >= sum_propens[1]) and (u < sum_propens[2]):
-                i_S += 1
-            elif (u >= sum_propens[2]) and (u < sum_propens[3]):
-                i_S += -1
-            elif (u >= sum_propens[3]) and (u < sum_propens[4]):
-                i_I += -1
-                new_infec = -1
-            else:
-                i_R += -1
+            propens = np.array([
+                propens_1, propens_2, propens_3, propens_4,
+                propens_5, propens_6])
+            sum_propens = np.empty(propens.shape)
+
+            if np.sum(propens) > 0:
+                for e in range(propens.shape[0]):
+                    sum_propens[e] = np.sum(propens[:(e+1)]) / np.sum(propens)
+
+                if u < sum_propens[0]:
+                    i_S += -1
+                    i_I += 1
+                    new_infec = 1
+                elif (u >= sum_propens[0]) and (u < sum_propens[1]):
+                    i_I += -1
+                    i_R += 1
+                    new_infec = -1
+                elif (u >= sum_propens[1]) and (u < sum_propens[2]):
+                    i_S += 1
+                elif (u >= sum_propens[2]) and (u < sum_propens[3]):
+                    i_S += -1
+                elif (u >= sum_propens[3]) and (u < sum_propens[4]):
+                    i_I += -1
+                    new_infec = -1
+                else:
+                    i_R += -1
 
         return (tau, i_S, i_I, i_R, new_infec)
 
