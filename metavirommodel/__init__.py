@@ -6,3 +6,4 @@
 #
 
 from ._models import Metaviromodel  # noqa
+from ._environment import Environment, BirthRatePrec, BirthRateSeason  # noqa

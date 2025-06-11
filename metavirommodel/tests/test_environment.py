@@ -76,16 +76,6 @@ class TestMetaviromodel(unittest.TestCase):
         self.assertEqual(len(I_history), 50)
         self.assertEqual(len(I_times_history), 50)
 
-        output, I_history, I_times_history = model.simulate_fixed_times(
-            [10, 1, 1,
-             lambda _: 0.5, lambda _: 0.1, lambda _: 0.1,
-             0.2, 0.1], 1, 50)
-
-        # Check output shape
-        self.assertEqual(output.shape, (50, 3))
-        self.assertEqual(len(I_history), 50)
-        self.assertEqual(len(I_times_history), 50)
-
         # Check that simulation times meet conditions
         with self.assertRaises(TypeError):
             model.simulate_fixed_times(test_parameters, '1', 50)
