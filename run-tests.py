@@ -142,8 +142,8 @@ def doctest_rst_and_public_interface():
     # has been added to metavirommodel and should be imported above and
     # included in this list.
     metavirommodel_submodules = [
-        'metavirommodel.models',
-        'metavirommodel.simulation',
+        'metavirommodel._models',
+        'metavirommodel._environment',
         'metavirommodel.version_info'
         ]
 

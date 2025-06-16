@@ -12,6 +12,7 @@ The metavirommodel source code is hosted on GitHub_.
 .. toctree::
 
    models
+   environment
 
 
 Search

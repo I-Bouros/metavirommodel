@@ -80,6 +80,8 @@ class BirthRatePrec(Environment):
         if len(parameters) < 3:
             self.process_precipitation_data()
         else:
+            if not isinstance(parameters[2], int):
+                raise TypeError('Time range must be integer.')
             self.process_precipitation_data(parameters[2])
 
         # Set the rule after which the value of the birth rate is calculated
@@ -102,6 +104,7 @@ class BirthRatePrec(Environment):
         # Pad with zeros the time points where we have no information on
         # the precipitation
         data_times = self._precipitation_data['Day']
+
         padded_prec_data = self._precipitation_data.set_index('Day').reindex(
             range(
                 min(data_times), max(data_times)+1)
@@ -110,10 +113,10 @@ class BirthRatePrec(Environment):
         prec_data = padded_prec_data['Precmm'].to_numpy()
 
         # Compute the average rainfall over the last time_range days
-        for d in padded_prec_data['Day']:
+        for d in padded_prec_data['Day'].values:
             if d < time_range:
                 average_precipitation.append(
-                    np.mean(prec_data[:d]))
+                    np.sum(prec_data[:d])/time_range)
             else:
                 average_precipitation.append(
                     np.mean(prec_data[(d-time_range):d]))
@@ -139,11 +142,6 @@ class BirthRatePrec(Environment):
                 'No precipitation column with this name in given'
                 'precipitation data.')
 
-        if np.asarray(precipitation_data['Day']).shape != np.asarray(
-                precipitation_data['Precmm']):
-            raise ValueError(
-                'Precipitation data has the wrong number of entries.')
-
     def _check_parameters(self, parameters):
         """
         Checks that the hyper-parameters have the correct format.
@@ -167,8 +165,8 @@ class BirthRatePrec(Environment):
 
         """
         self.birth_rate = lambda t: self.bM * self.avg_prec[
-            np.floor(t).astype(int)] / (self.rho + self.avg_prec[
-                np.floor(t).astype(int)])
+            np.floor(t).astype(int)-1] / (self.rho + self.avg_prec[
+                np.floor(t).astype(int)-1])
 
     def __call__(self, t_cal):
         """
@@ -179,6 +177,10 @@ class BirthRatePrec(Environment):
         t_cal
             (int) current time according to the calendar date.
         """
+        if t_cal > len(self.avg_prec):
+            raise ValueError(
+                'Time of simulation outside precipitation data bounds.')
+
         return self.birth_rate(t_cal)
 
 

@@ -7,136 +7,133 @@
 
 import unittest
 
+import pandas as pd
 import numpy as np
+import math
 
 import metavirommodel as mm
 
 
-class TestMetaviromodel(unittest.TestCase):
+class TestBirthRatePrec(unittest.TestCase):
     """
-    Test the 'Metaviromodel' class.
+    Test the 'BirthRatePrec' class.
     """
     def test__init__(self):
-        model = mm.Metaviromodel()
-        self.assertEqual(model._output_names, ['S', 'I', 'R'])
-        self.assertEqual(model._parameter_names, [
-            'S0', 'I0', 'R0', 'theta', 'mu', 'nu', 'beta', 'gamma'
-        ])
-        self.assertEqual(model._n_outputs, 3)
-        self.assertEqual(model._n_parameters, 8)
-        np.testing.assert_array_equal(model._output_indices, np.arange(3))
+        precipitation_data = pd.DataFrame({
+            'Day': [1, 3, 7, 34],
+            'Precmm': [0, 2, 0, 10]
+        })
 
-    def test_n_outputs(self):
-        model = mm.Metaviromodel()
-        self.assertEqual(model.n_outputs(), 3)
+        parameters = [0.5, 0.008, 2]
+        parameters1 = [0.5, 0.008]
 
-    def test_n_parameters(self):
-        model = mm.Metaviromodel()
-        self.assertEqual(model.n_parameters(), 8)
+        birth_rate = mm.BirthRatePrec(precipitation_data, parameters)
+        birth_rate1 = mm.BirthRatePrec(precipitation_data, parameters1)
 
-    def test_output_names(self):
-        model = mm.Metaviromodel()
-        self.assertEqual(model.output_names(), ['S', 'I', 'R'])
+        self.assertEqual(birth_rate.bM, 0.5)
+        self.assertEqual(birth_rate.rho, 0.008)
+        self.assertEqual(len(birth_rate.avg_prec), 34)
 
-        model.set_outputs(['S', 'I'])
-        self.assertEqual(model.output_names(), ['S', 'I'])
+        self.assertEqual(birth_rate1.bM, 0.5)
+        self.assertEqual(birth_rate1.rho, 0.008)
+        self.assertEqual(len(birth_rate1.avg_prec), 34)
 
-    def test_parameter_names(self):
-        model = mm.Metaviromodel()
-        self.assertEqual(model.parameter_names(), [
-            'S0', 'I0', 'R0', 'theta', 'mu', 'nu', 'beta', 'gamma'
-        ])
-
-    def test_set_outputs(self):
-        model = mm.Metaviromodel()
-
-        # Check ValueError will be raised when some output names
-        # are not as required
-        with self.assertRaises(ValueError):
-            model.set_outputs(['incidence number'])
-
-        model.set_outputs(['I', 'R'])
-        # Check the outputs names and number are as expected
-        self.assertEqual(model._output_indices, [1, 2])
-        self.assertEqual(model._n_outputs, 2)
-
-    def test_simulate_fixed_times(self):
-        model = mm.Metaviromodel()
-
-        initial_values = [10, 1, 1]
-        constants = [0.5, 0.1, 0.1, 0.2, 0.1]
-        test_parameters = initial_values + constants
-
-        model.set_outputs(['S', 'I', 'R'])
-        output, I_history, I_times_history = model.simulate_fixed_times(
-            test_parameters, 1, 50)
-
-        # Check output shape
-        self.assertEqual(output.shape, (50, 3))
-        self.assertEqual(len(I_history), 50)
-        self.assertEqual(len(I_times_history), 50)
-
-        # Check that simulation times meet conditions
+        # Check that precipitation data meets conditions
         with self.assertRaises(TypeError):
-            model.simulate_fixed_times(test_parameters, '1', 50)
+            precipitation_data1 = [0, 2, 0, 10]
+            mm.BirthRatePrec(precipitation_data1, parameters)
 
         with self.assertRaises(ValueError):
-            model.simulate_fixed_times(test_parameters, 0, 50)
-
-        with self.assertRaises(TypeError):
-            model.simulate_fixed_times(test_parameters, 1, '50')
-
-        with self.assertRaises(ValueError):
-            model.simulate_fixed_times(test_parameters, 1, 0)
+            precipitation_data1 = pd.DataFrame({
+                'Time': [1, 3, 7, 34],
+                'Precmm': [0, 2, 0, 10]
+            })
+            mm.BirthRatePrec(precipitation_data1, parameters)
 
         with self.assertRaises(ValueError):
-            model.simulate_fixed_times(test_parameters, 100, 50)
+            precipitation_data1 = pd.DataFrame({
+                'Day': [1, 3, 7, 34],
+                'Mm': [0, 2, 0, 10]
+            })
+            mm.BirthRatePrec(precipitation_data1, parameters)
 
-        # Check that parameters meet conditions
+        # Check that hyper-parameters meets conditions
         with self.assertRaises(TypeError):
-            test_parameters1 = (10, 1, 1, 0.5, 0.1, 0.1, 0.2, 0.1)
-            model.simulate_fixed_times(test_parameters1, 1, 50)
+            parameters2 = (0.5, 0.008)
+            mm.BirthRatePrec(precipitation_data, parameters2)
 
         with self.assertRaises(ValueError):
-            test_parameters1 = [10, 1, 1, 0.5, 0.1, 0.1, 0.2]
-            model.simulate_fixed_times(test_parameters1, 1, 50)
-
-        with self.assertRaises(TypeError):
-            test_parameters1 = [10, '1', 1, 0.5, 0.1, 0.1, 0.2, 0.1]
-            model.simulate_fixed_times(test_parameters1, 1, 50)
-
-        with self.assertRaises(TypeError):
-            test_parameters1 = [10.0, 1, 1, 0.5, 0.1, 0.1, 0.2, 0.1]
-            model.simulate_fixed_times(test_parameters1, 1, 50)
+            parameters2 = [0.5, 0.008, 10, 0.2]
+            mm.BirthRatePrec(precipitation_data, parameters2)
 
         with self.assertRaises(ValueError):
-            test_parameters1 = [10, -1, 1, 0.5, 0.1, 0.1, 0.2, 0.1]
-            model.simulate_fixed_times(test_parameters1, 1, 50)
+            parameters2 = [0.5]
+            mm.BirthRatePrec(precipitation_data, parameters2)
 
         with self.assertRaises(TypeError):
-            test_parameters1 = [10, 1, 1, '0.5', 0.1, 0.1, 0.2, 0.1]
-            model.simulate_fixed_times(test_parameters1, 1, 50)
+            parameters2 = [0.5, '0.008']
+            mm.BirthRatePrec(precipitation_data, parameters2)
 
         with self.assertRaises(ValueError):
-            test_parameters1 = [10, 1, 1, -0.5, 0.1, 0.1, 0.2, 0.1]
-            model.simulate_fixed_times(test_parameters1, 1, 50)
+            parameters2 = [-0.5, 0.008, 10]
+            mm.BirthRatePrec(precipitation_data, parameters2)
 
         with self.assertRaises(TypeError):
-            test_parameters1 = [10, 1, 1, 0.5, '0.1', 0.1, 0.2, 0.1]
-            model.simulate_fixed_times(test_parameters1, 1, 50)
+            parameters2 = [0.5, 0.008, 0.2]
+            mm.BirthRatePrec(precipitation_data, parameters2)
 
-        with self.assertRaises(TypeError):
-            test_parameters1 = [10, 1, 1, 0.5, 0.1, '0.1', 0.2, 0.1]
-            model.simulate_fixed_times(test_parameters1, 1, 50)
+    def test_call(self):
+        precipitation_data = pd.DataFrame({
+            'Day': [1, 3, 7, 34],
+            'Precmm': [0, 2, 0, 10]
+        })
+
+        parameters = [0.5, 0.008, 2]
+        parameters1 = [0.5, 0.008]
+
+        birth_rate = mm.BirthRatePrec(precipitation_data, parameters)
+        birth_rate1 = mm.BirthRatePrec(precipitation_data, parameters1)
+
+        self.assertAlmostEqual(birth_rate(4.2), 0.5/1.008)
+        self.assertAlmostEqual(birth_rate1(4.2), 0.5/(0.008*15 + 1))
 
         with self.assertRaises(ValueError):
-            test_parameters1 = [10, 1, 1, 0.5, 0.1, -0.1, 0.2, 0.1]
-            model.simulate_fixed_times(test_parameters1, 1, 50)
+            birth_rate(35)
+        with self.assertRaises(ValueError):
+            birth_rate1(35)
 
+
+class TestBirthRateSeason(unittest.TestCase):
+    """
+    Test the 'BirthRateSeason' class.
+    """
+    def test__init__(self):
+        parameters = [0.5, 0.15]
+
+        birth_rate = mm.BirthRateSeason(parameters)
+
+        self.assertEqual(birth_rate.b0, 0.5)
+        self.assertEqual(birth_rate.w, 0.15)
+
+        # Check that hyper-parameters meets conditions
         with self.assertRaises(TypeError):
-            test_parameters1 = [10, 1, 1, 0.5, 0.1, 0.1, '0.2', 0.1]
-            model.simulate_fixed_times(test_parameters1, 1, 50)
+            mm.BirthRateSeason((0.5, 0.15))
 
         with self.assertRaises(ValueError):
-            test_parameters1 = [10, 1, 1, 0.5, 0.1, 0.1, 0.2, -0.1]
-            model.simulate_fixed_times(test_parameters1, 1, 50)
+            mm.BirthRateSeason([0.5, 0.15, 0.2])
+
+        with self.assertRaises(ValueError):
+            mm.BirthRateSeason([0.5, -0.15])
+
+    def test_call(self):
+        parameters = [0.5, 0.15]
+
+        birth_rate = mm.BirthRateSeason(parameters)
+
+        self.assertAlmostEqual(
+            birth_rate(4.2),
+            np.abs(0.5*np.sin(-2*math.pi*0.15)) - 0.5*np.sin(-2*math.pi*0.15))
+        self.assertAlmostEqual(
+            birth_rate(104.2),
+            np.abs(0.5*np.sin(2*math.pi*(14/52-0.15))) - 0.5*np.sin(
+                2*math.pi*(14/52-0.15)))
