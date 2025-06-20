@@ -23,6 +23,7 @@ import pandas as pd
 from datetime import datetime
 import time
 from time import mktime
+import numpy as np
 
 
 def read_full_precipitation_data(pr_file: str):
@@ -93,7 +94,7 @@ def process_precipitation_data(
         daily_data = data[data['Day'] == t]
         newrow = pd.DataFrame([{
             'Day': t,
-            'Precmm': sum(daily_data['Precmm'].values)
+            'Precmm': np.sum(daily_data['Precmm'].values)
         }])
         precp = pd.concat([precp, newrow])
 
@@ -144,7 +145,7 @@ def main():
     precipitation = process_precipitation_data(
         data,
         start_date='01/01/2020 06:00',
-        end_date='31/12/2021 15:00')
+        end_date='31/12/2022 15:00')
 
     # Transform recorded matrix of serial intervals to csv file
     precipitation.to_csv(

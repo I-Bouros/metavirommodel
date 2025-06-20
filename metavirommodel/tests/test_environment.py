@@ -132,8 +132,8 @@ class TestBirthRateSeason(unittest.TestCase):
 
         self.assertAlmostEqual(
             birth_rate(4.2),
-            np.abs(0.5*np.sin(-2*math.pi*0.15)) - 0.5*np.sin(-2*math.pi*0.15))
+            np.abs(0.5*np.sin(-2*math.pi*0.15)) + 0.5*np.sin(-2*math.pi*0.15))
         self.assertAlmostEqual(
             birth_rate(104.2),
-            np.abs(0.5*np.sin(2*math.pi*(14/52-0.15))) - 0.5*np.sin(
+            np.abs(0.5*np.sin(2*math.pi*(14/52-0.15))) + 0.5*np.sin(
                 2*math.pi*(14/52-0.15)))

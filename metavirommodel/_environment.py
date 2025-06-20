@@ -160,8 +160,15 @@ class BirthRatePrec(Environment):
                 raise ValueError('All parameters must be => 0.')
 
     def _set_rate_rule(self):
-        """
+        r"""
         Computes the value of the birth rates based on a rainfall criterion.
+
+        .. math::
+            b(t) = |b_0 \sin(2 pi (\frac{\lfloor t/7 \rfloor \}{52} - \omega))
+            | + b_0 \sin(2 pi (\frac{\lfloor t/7 \rfloor \}{52} - \omega))
+
+        where :math:`b_M` is the baseline birth rate and :math:`\rho` is the
+        birth rate phase used to compute the birth rate.
 
         """
         self.birth_rate = lambda t: self.bM * self.avg_prec[
@@ -224,13 +231,20 @@ class BirthRateSeason(Environment):
                 raise ValueError('All parameters must be => 0.')
 
     def _set_rate_rule(self):
-        """
+        r"""
         Computes the value of the birth rates based on a seasonality criterion.
+
+        .. math::
+            b(t) = |b_0 \sin(2 pi (\frac{\lfloor t/7 \rfloor \}{52} - \omega))
+            | + b_0 \sin(2 pi (\frac{\lfloor t/7 \rfloor \}{52} - \omega))
+
+        where :math:`b_0` is the baseline birth rate and :math:`\omega` is the
+        birth rate phase used to compute the birth rate.
 
         """
 
         self.birth_rate = lambda t: np.abs(
-            self.b0 * np.sin(2*math.pi*(np.floor(t/7)/52 - self.w))) - \
+            self.b0 * np.sin(2*math.pi*(np.floor(t/7)/52 - self.w))) + \
             self.b0 * np.sin(2*math.pi*(np.floor(t/7)/52 - self.w))
 
     def __call__(self, t_cal):
