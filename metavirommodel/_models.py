@@ -176,9 +176,6 @@ class Metaviromodel(pints.ForwardModel):
         # Generate random number for reaction and time to next reaction
         u, u1 = uniform.rvs(size=2)
 
-        # Time to next reaction
-        tau = np.log(1/u1)
-
         self.N = sum((i_S, i_I, i_R))
 
         new_infec = 0
@@ -200,6 +197,8 @@ class Metaviromodel(pints.ForwardModel):
             if np.sum(propens) > 0:
                 for e in range(propens.shape[0]):
                     sum_propens[e] = np.sum(propens[:(e+1)]) / np.sum(propens)
+                # Time to next reaction
+                tau = np.log(1/u1) / np.sum(propens)
 
                 if u < sum_propens[0]:
                     i_S += -1
@@ -218,6 +217,9 @@ class Metaviromodel(pints.ForwardModel):
                     new_infec = -1
                 else:
                     i_R += -1
+
+            else:
+                tau = None
 
         return (tau, i_S, i_I, i_R, new_infec)
 
@@ -255,40 +257,54 @@ class Metaviromodel(pints.ForwardModel):
             tau, i_S, i_I, i_R, new_infec = self.one_step_gillespie(
                 current_time + self._cal_delay, i_S, i_I, i_R)
 
-            # If an infection disappears
-            if new_infec == -1:
-                # Read in the last structure of infections
-                current_infections = infect_history[-1]
-                current_infec_times = infect_times_history[-1]
+            # If there is a next reaction
+            if tau is not None:
+                # If an infection disappears
+                if new_infec == -1:
+                    # Read in the last structure of infections
+                    current_infections = infect_history[-1]
+                    current_infec_times = infect_times_history[-1]
 
-                # Select infection to disappear using a multinomial
-                # distribution
-                weights = current_time - np.asarray(current_infec_times)
-                if np.sum(weights) == 0:
-                    elim_infec = np.random.choice(
-                        range(sum(current_infections)))
+                    # Select infection to disappear using a multinomial
+                    # distribution
+                    weights = current_time - np.asarray(current_infec_times)
+                    if np.sum(weights) == 0:
+                        elim_infec = np.random.choice(
+                            range(sum(current_infections)))
+                    else:
+                        elim_infec = np.random.choice(
+                            range(sum(current_infections)),
+                            p=weights/np.sum(weights))
+
+                    # Eliminate infection
+                    current_infections.remove(current_infections[elim_infec])
+                    current_infec_times.remove(current_infec_times[elim_infec])
+
+                    infect_history.append(current_infections)
+                    infect_times_history.append(current_infec_times)
+                # If a new infection occurs in the step
+                elif new_infec == 1:
+                    # Read in the last structure of infections and add new
+                    # infection to the timeline
+                    current_infections = infect_history[-1] + [1]
+                    current_infec_times = infect_times_history[-1] + \
+                        [current_time]
+
+                    infect_history.append(current_infections)
+                    infect_times_history.append(current_infec_times)
+                # If no change in infections occurs in the step
                 else:
-                    elim_infec = np.random.choice(
-                        range(sum(current_infections)),
-                        p=weights/np.sum(weights))
+                    # Read in the last structure of infections
+                    current_infections = infect_history[-1]
+                    current_infec_times = infect_times_history[-1]
 
-                # Eliminate infection
-                current_infections.remove(current_infections[elim_infec])
-                current_infec_times.remove(current_infec_times[elim_infec])
+                    infect_history.append(current_infections)
+                    infect_times_history.append(current_infec_times)
 
-                infect_history.append(current_infections)
-                infect_times_history.append(current_infec_times)
-            # If a new infection occurs in the step
-            elif new_infec == 1:
-                # Read in the last structure of infections and add new
-                # infection to the timeline
-                current_infections = infect_history[-1] + [1]
-                current_infec_times = infect_times_history[-1] + [current_time]
+                current_time += tau
 
-                infect_history.append(current_infections)
-                infect_times_history.append(current_infec_times)
-            # If no change in infections occurs in the step
             else:
+                # If there is no next reaction as we run out of individuals
                 # Read in the last structure of infections
                 current_infections = infect_history[-1]
                 current_infec_times = infect_times_history[-1]
@@ -296,7 +312,7 @@ class Metaviromodel(pints.ForwardModel):
                 infect_history.append(current_infections)
                 infect_times_history.append(current_infec_times)
 
-            current_time += tau
+                current_time += 1
 
         # Keep only integer timepoints solutions
         for t in range(interval):
