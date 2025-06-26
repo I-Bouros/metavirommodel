@@ -194,32 +194,28 @@ class Metaviromodel(pints.ForwardModel):
                 propens_5, propens_6])
             sum_propens = np.empty(propens.shape)
 
-            if np.sum(propens) > 0:
-                for e in range(propens.shape[0]):
-                    sum_propens[e] = np.sum(propens[:(e+1)]) / np.sum(propens)
-                # Time to next reaction
-                tau = np.log(1/u1) / np.sum(propens)
+            for e in range(propens.shape[0]):
+                sum_propens[e] = np.sum(propens[:(e+1)]) / np.sum(propens)
+            # Time to next reaction
+            tau = np.log(1/u1) / np.sum(propens)
 
-                if u < sum_propens[0]:
-                    i_S += -1
-                    i_I += 1
-                    new_infec = 1
-                elif (u >= sum_propens[0]) and (u < sum_propens[1]):
-                    i_I += -1
-                    i_R += 1
-                    new_infec = -1
-                elif (u >= sum_propens[1]) and (u < sum_propens[2]):
-                    i_S += 1
-                elif (u >= sum_propens[2]) and (u < sum_propens[3]):
-                    i_S += -1
-                elif (u >= sum_propens[3]) and (u < sum_propens[4]):
-                    i_I += -1
-                    new_infec = -1
-                else:
-                    i_R += -1
-
+            if u < sum_propens[0]:
+                i_S += -1
+                i_I += 1
+                new_infec = 1
+            elif (u >= sum_propens[0]) and (u < sum_propens[1]):
+                i_I += -1
+                i_R += 1
+                new_infec = -1
+            elif (u >= sum_propens[1]) and (u < sum_propens[2]):
+                i_S += 1
+            elif (u >= sum_propens[2]) and (u < sum_propens[3]):
+                i_S += -1
+            elif (u >= sum_propens[3]) and (u < sum_propens[4]):
+                i_I += -1
+                new_infec = -1
             else:
-                tau = None
+                i_R += -1
 
         return (tau, i_S, i_I, i_R, new_infec)
 
@@ -245,20 +241,20 @@ class Metaviromodel(pints.ForwardModel):
 
         large_solution = []
         time_solution = []
-        infect_history = [[1] * i_I]
-        infect_times_history = [[0] * i_I]
+        infect_history = []
+        infect_times_history = []
         solution = np.empty((interval, 3), dtype=np.integer)
         I_history = []
         I_times_history = []
+
         current_time = start_time
+        new_infec = 0
+
         while current_time <= end_time:
             time_solution.append(float(current_time))
             large_solution.append([i_S, i_I, i_R])
-            tau, i_S, i_I, i_R, new_infec = self.one_step_gillespie(
-                current_time + self._cal_delay, i_S, i_I, i_R)
 
-            # If there is a next reaction
-            if tau is not None:
+            if len(infect_history) > 0:
                 # If an infection disappears
                 if new_infec == -1:
                     # Read in the last structure of infections
@@ -270,25 +266,27 @@ class Metaviromodel(pints.ForwardModel):
                     weights = current_time - np.asarray(current_infec_times)
                     if np.sum(weights) == 0:
                         elim_infec = np.random.choice(
-                            range(sum(current_infections)))
+                            range(len(current_infections)))
                     else:
                         elim_infec = np.random.choice(
-                            range(sum(current_infections)),
+                            range(len(current_infections)),
                             p=weights/np.sum(weights))
 
                     # Eliminate infection
-                    current_infections.remove(current_infections[elim_infec])
-                    current_infec_times.remove(current_infec_times[elim_infec])
+                    new_current_infections = current_infections[
+                        :(elim_infec)] + current_infections[(elim_infec+1):]
+                    new_current_infec_times = current_infec_times[
+                        :elim_infec] + current_infec_times[(elim_infec+1):]
 
-                    infect_history.append(current_infections)
-                    infect_times_history.append(current_infec_times)
+                    infect_history.append(new_current_infections)
+                    infect_times_history.append(new_current_infec_times)
                 # If a new infection occurs in the step
                 elif new_infec == 1:
                     # Read in the last structure of infections and add new
                     # infection to the timeline
                     current_infections = infect_history[-1] + [1]
                     current_infec_times = infect_times_history[-1] + \
-                        [current_time]
+                        [float(current_time)]
 
                     infect_history.append(current_infections)
                     infect_times_history.append(current_infec_times)
@@ -300,26 +298,21 @@ class Metaviromodel(pints.ForwardModel):
 
                     infect_history.append(current_infections)
                     infect_times_history.append(current_infec_times)
-
-                current_time += tau
-
             else:
-                # If there is no next reaction as we run out of individuals
-                # Read in the last structure of infections
-                current_infections = infect_history[-1]
-                current_infec_times = infect_times_history[-1]
+                infect_history.append([1] * i_I)
+                infect_times_history.append([0] * i_I)
 
-                infect_history.append(current_infections)
-                infect_times_history.append(current_infec_times)
+            tau, i_S, i_I, i_R, new_infec = self.one_step_gillespie(
+                current_time + self._cal_delay, i_S, i_I, i_R)
 
-                current_time += 1
+            current_time += tau
 
         # Keep only integer timepoints solutions
         for t in range(interval):
-            pos = np.where(np.asarray(time_solution <= times[t]))
+            pos = np.where(np.asarray(time_solution) <= times[t])
             solution[t, :] = large_solution[pos[-1][-1]]
-            I_history.append(infect_history[1:][pos[-1][-1]])
-            I_times_history.append(infect_times_history[1:][pos[-1][-1]])
+            I_history.append(infect_history[pos[-1][-1]])
+            I_times_history.append(infect_times_history[pos[-1][-1]])
 
         return solution, I_history, I_times_history
 
