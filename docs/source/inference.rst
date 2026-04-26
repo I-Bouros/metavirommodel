@@ -43,37 +43,37 @@ data for model parameter inference, organised by the population model.
 Constant Birth Rate Stochastic SIR Model
 ****************************************
 
-.. autoclass:: MVRCtValInfer
+.. autoclass:: inference_ct_values.MVRCtValInfer
   :members:
 
-.. autoclass:: MVRCtValLogLik
+.. autoclass:: inference_ct_values.MVRCtValLogLik
   :members:
 
-.. autoclass:: MVRCtValLogPrior
+.. autoclass:: inference_ct_values.MVRCtValLogPrior
   :members:
 
 Logistic Birth Rate Stochastic SIR Model
 ****************************************
 
-.. autoclass:: LogisticGrowthMVRCtValInfer
+.. autoclass:: inference_ct_values.LogisticGrowthMVRCtValInfer
   :members:
 
-.. autoclass:: LogisticGrowthMVRCtValLogLik
+.. autoclass:: inference_ct_values.LogisticGrowthMVRCtValLogLik
   :members:
 
-.. autoclass:: LogisticMVRCtValLogPrior
+.. autoclass:: inference_ct_values.LogisticMVRCtValLogPrior
   :members:
 
 Exponential Birth Rate Stochastic SIR Model
 *******************************************
 
-.. autoclass:: ExponentialGrowthMVRCtValInfer
+.. autoclass:: inference_ct_values.ExponentialGrowthMVRCtValInfer
   :members:
 
-.. autoclass:: ExponentialGrowthMVRCtValLogLik
+.. autoclass:: inference_ct_values.ExponentialGrowthMVRCtValLogLik
   :members:
 
-.. autoclass:: ExponentialGrowthMVRCtValLogPrior
+.. autoclass:: inference_ct_values.ExponentialGrowthMVRCtValLogPrior
   :members:
 
 Viral Read Data-informed Inference Classes
@@ -85,38 +85,38 @@ data for model parameter inference, organised by the population model.
 Constant Birth Rate Stochastic SIR Model
 ****************************************
 
-.. autoclass:: MVRVirReadInfer
+.. autoclass:: inference_viral_reads.MVRVirReadInfer
   :members:
 
-.. autoclass:: MVRVirReadLogPrior
+.. autoclass:: inference_viral_reads.MVRVirReadLogPrior
   :members:
 
-.. autoclass:: MVRVirReadLogLik
+.. autoclass:: inference_viral_reads.MVRVirReadLogLik
   :members:
 
 Logistic Birth Rate Stochastic SIR Model
 ****************************************
 
-.. autoclass:: LogisticGrowthMVRVirReadInfer
+.. autoclass:: inference_viral_reads.LogisticGrowthMVRVirReadInfer
   :members:
 
-.. autoclass:: LogisticGrowthMVRVirReadLogLik
+.. autoclass:: inference_viral_reads.LogisticGrowthMVRVirReadLogLik
   :members:
 
 Exponential Birth Rate Stochastic SIR Model
 *******************************************
 
-.. autoclass:: ExponentialGrowthMVRVirReadInfer
+.. autoclass:: inference_viral_reads.ExponentialGrowthMVRVirReadInfer
   :members:
 
-.. autoclass:: ExponentialGrowthMVRVirReadLogLik
+.. autoclass:: inference_viral_reads.ExponentialGrowthMVRVirReadLogLik
   :members:
 
 Logistic Birth Rate Stochastic SIR Model with Lotka-Volterra dynamics
 *********************************************************************
 
-.. autoclass:: PreyPredGrowthMVRVirReadInfer
+.. autoclass:: inference_viral_reads.PreyPredGrowthMVRVirReadInfer
   :members:
 
-.. autoclass:: PreyPredGrowthMVRVirReadLogLik
+.. autoclass:: inference_viral_reads.PreyPredGrowthMVRVirReadLogLik
   :members:

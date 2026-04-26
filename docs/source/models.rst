@@ -47,10 +47,22 @@ Logistic Birth Stochastic SIR model
 .. autoclass:: LogisticGrowthMetaviromodel
   :members:
 
+Auxillary function
+******************
+
+.. autoclass:: constant_func
+  :members:
+
 Predator Stochastic SIR Models
 ******************************
 Logistic Birth Stochastic SIR model with predator dynamics
 **********************************************************
 
 .. autoclass:: PreyPredMetaviromodel
+  :members:
+
+Auxillary function
+******************
+
+.. autoclass:: constant_func
   :members:
