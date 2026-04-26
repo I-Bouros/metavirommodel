@@ -12,6 +12,10 @@ Overview:
     - :class:`BirthRateSeason`
   - Precipitation-dependent rates
     - :class:`BirthRatePrec`
+  - Auxillary Classes
+    - :class:`Environment`
+    - :class:`Seasonal_birth_rate`
+    - :class:`Prec_birth_rate`
 
 
 Seasonal birth rate
@@ -24,4 +28,16 @@ Precipitation-dependent birth rate
 **********************************
 
 .. autoclass:: BirthRatePrec
+  :members:
+
+Auxillary classes
+*****************
+
+.. autoclass:: Environment
+  :members:
+
+.. autoclass:: Seasonal_birth_rate
+  :members:
+
+.. autoclass:: Prec_birth_rate
   :members:

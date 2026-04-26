@@ -16,6 +16,7 @@ The metavirommodel source code is hosted on GitHub_.
 
    models
    environment
+   inference
 
 
 Search

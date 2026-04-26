@@ -36,7 +36,7 @@ Constant Birth Stochastic SIR model
   :members:
 
 Exponential Birth Stochastic SIR model
-***********************************
+**************************************
 
 .. autoclass:: ExponentialGrowthMetaviromodel
   :members:
