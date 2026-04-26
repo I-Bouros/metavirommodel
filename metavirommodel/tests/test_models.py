@@ -64,7 +64,7 @@ class TestMetaviromodel(unittest.TestCase):
         model = mm.Metaviromodel()
 
         initial_values = [10, 1, 1]
-        constants = [0.5, 0.1, 0.1, 0.2, 0.1]
+        constants = [0.5, 0.01, 0.01, 0.2, 0.1]
         test_parameters = initial_values + constants
 
         model.set_outputs(['S', 'I', 'R'])
@@ -85,7 +85,7 @@ class TestMetaviromodel(unittest.TestCase):
          I_times_history, R_times_history) = \
             model.simulate_fixed_times(
                 [10, 1, 1,
-                 lambda _: 0.5, lambda _: 0.1, lambda _: 0.1,
+                 lambda _: 0.5, lambda _: 0.01, lambda _: 0.01,
                     0.2, 0.1], 1, 50)
 
         # Check output shape
@@ -114,51 +114,51 @@ class TestMetaviromodel(unittest.TestCase):
 
         # Check that parameters meet conditions
         with self.assertRaises(TypeError):
-            test_parameters1 = (10, 1, 1, 0.5, 0.1, 0.1, 0.2, 0.1)
+            test_parameters1 = (10, 1, 1, 0.5, 0.01, 0.01, 0.2, 0.1)
             model.simulate_fixed_times(test_parameters1, 1, 50)
 
         with self.assertRaises(ValueError):
-            test_parameters1 = [10, 1, 1, 0.5, 0.1, 0.1, 0.2]
+            test_parameters1 = [10, 1, 1, 0.5, 0.01, 0.01, 0.2]
             model.simulate_fixed_times(test_parameters1, 1, 50)
 
         with self.assertRaises(TypeError):
-            test_parameters1 = [10, '1', 1, 0.5, 0.1, 0.1, 0.2, 0.1]
+            test_parameters1 = [10, '1', 1, 0.5, 0.01, 0.01, 0.2, 0.1]
             model.simulate_fixed_times(test_parameters1, 1, 50)
 
         with self.assertRaises(TypeError):
-            test_parameters1 = [10.0, 1, 1, 0.5, 0.1, 0.1, 0.2, 0.1]
+            test_parameters1 = [10.0, 1, 1, 0.5, 0.01, 0.01, 0.2, 0.1]
             model.simulate_fixed_times(test_parameters1, 1, 50)
 
         with self.assertRaises(ValueError):
-            test_parameters1 = [10, -1, 1, 0.5, 0.1, 0.1, 0.2, 0.1]
+            test_parameters1 = [10, -1, 1, 0.5, 0.01, 0.01, 0.2, 0.1]
             model.simulate_fixed_times(test_parameters1, 1, 50)
 
         with self.assertRaises(TypeError):
-            test_parameters1 = [10, 1, 1, '0.5', 0.1, 0.1, 0.2, 0.1]
+            test_parameters1 = [10, 1, 1, '0.5', 0.01, 0.01, 0.2, 0.1]
             model.simulate_fixed_times(test_parameters1, 1, 50)
 
         with self.assertRaises(ValueError):
-            test_parameters1 = [10, 1, 1, -0.5, 0.1, 0.1, 0.2, 0.1]
+            test_parameters1 = [10, 1, 1, -0.5, 0.01, 0.01, 0.2, 0.1]
             model.simulate_fixed_times(test_parameters1, 1, 50)
 
         with self.assertRaises(TypeError):
-            test_parameters1 = [10, 1, 1, 0.5, '0.1', 0.1, 0.2, 0.1]
+            test_parameters1 = [10, 1, 1, 0.5, '0.01', 0.01, 0.2, 0.1]
             model.simulate_fixed_times(test_parameters1, 1, 50)
 
         with self.assertRaises(TypeError):
-            test_parameters1 = [10, 1, 1, 0.5, 0.1, '0.1', 0.2, 0.1]
+            test_parameters1 = [10, 1, 1, 0.5, 0.01, '0.01', 0.2, 0.1]
             model.simulate_fixed_times(test_parameters1, 1, 50)
 
         with self.assertRaises(ValueError):
-            test_parameters1 = [10, 1, 1, 0.5, 0.1, -0.1, 0.2, 0.1]
+            test_parameters1 = [10, 1, 1, 0.5, 0.01, -0.01, 0.2, 0.1]
             model.simulate_fixed_times(test_parameters1, 1, 50)
 
         with self.assertRaises(TypeError):
-            test_parameters1 = [10, 1, 1, 0.5, 0.1, 0.1, '0.2', 0.1]
+            test_parameters1 = [10, 1, 1, 0.5, 0.01, 0.01, '0.2', 0.1]
             model.simulate_fixed_times(test_parameters1, 1, 50)
 
         with self.assertRaises(ValueError):
-            test_parameters1 = [10, 1, 1, 0.5, 0.1, 0.1, 0.2, -0.1]
+            test_parameters1 = [10, 1, 1, 0.5, 0.01, 0.01, 0.2, -0.1]
             model.simulate_fixed_times(test_parameters1, 1, 50)
 
 
@@ -226,7 +226,7 @@ class TestLogisticGrowthMetaviromodel(unittest.TestCase):
         model = mm.LogisticGrowthMetaviromodel(20)
 
         initial_values = [10, 1, 1]
-        constants = [0.5, 0.1, 0.1, 0.2, 0.1]
+        constants = [0.5, 0.01, 0.01, 0.2, 0.1]
         test_parameters = initial_values + constants
 
         model.set_outputs(['S', 'I', 'R'])
@@ -247,7 +247,7 @@ class TestLogisticGrowthMetaviromodel(unittest.TestCase):
          I_times_history, R_times_history) = \
             model.simulate_fixed_times(
                 [10, 1, 1,
-                 lambda _: 0.5, lambda _: 0.1, lambda _: 0.1,
+                 lambda _: 0.5, lambda _: 0.01, lambda _: 0.01,
                     0.2, 0.1], 1, 50)
 
         # Check output shape
@@ -276,49 +276,49 @@ class TestLogisticGrowthMetaviromodel(unittest.TestCase):
 
         # Check that parameters meet conditions
         with self.assertRaises(TypeError):
-            test_parameters1 = (10, 1, 1, 0.5, 0.1, 0.1, 0.2, 0.1)
+            test_parameters1 = (10, 1, 1, 0.5, 0.01, 0.01, 0.2, 0.1)
             model.simulate_fixed_times(test_parameters1, 1, 50)
 
         with self.assertRaises(ValueError):
-            test_parameters1 = [10, 1, 1, 0.5, 0.1, 0.1, 0.2]
+            test_parameters1 = [10, 1, 1, 0.5, 0.01, 0.01, 0.2]
             model.simulate_fixed_times(test_parameters1, 1, 50)
 
         with self.assertRaises(TypeError):
-            test_parameters1 = [10, '1', 1, 0.5, 0.1, 0.1, 0.2, 0.1]
+            test_parameters1 = [10, '1', 1, 0.5, 0.01, 0.01, 0.2, 0.1]
             model.simulate_fixed_times(test_parameters1, 1, 50)
 
         with self.assertRaises(TypeError):
-            test_parameters1 = [10.0, 1, 1, 0.5, 0.1, 0.1, 0.2, 0.1]
+            test_parameters1 = [10.0, 1, 1, 0.5, 0.01, 0.01, 0.2, 0.1]
             model.simulate_fixed_times(test_parameters1, 1, 50)
 
         with self.assertRaises(ValueError):
-            test_parameters1 = [10, -1, 1, 0.5, 0.1, 0.1, 0.2, 0.1]
+            test_parameters1 = [10, -1, 1, 0.5, 0.01, 0.01, 0.2, 0.1]
             model.simulate_fixed_times(test_parameters1, 1, 50)
 
         with self.assertRaises(TypeError):
-            test_parameters1 = [10, 1, 1, '0.5', 0.1, 0.1, 0.2, 0.1]
+            test_parameters1 = [10, 1, 1, '0.5', 0.01, 0.01, 0.2, 0.1]
             model.simulate_fixed_times(test_parameters1, 1, 50)
 
         with self.assertRaises(ValueError):
-            test_parameters1 = [10, 1, 1, -0.5, 0.1, 0.1, 0.2, 0.1]
+            test_parameters1 = [10, 1, 1, -0.5, 0.01, 0.01, 0.2, 0.1]
             model.simulate_fixed_times(test_parameters1, 1, 50)
 
         with self.assertRaises(TypeError):
-            test_parameters1 = [10, 1, 1, 0.5, '0.1', 0.1, 0.2, 0.1]
+            test_parameters1 = [10, 1, 1, 0.5, '0.01', 0.01, 0.2, 0.1]
             model.simulate_fixed_times(test_parameters1, 1, 50)
 
         with self.assertRaises(TypeError):
-            test_parameters1 = [10, 1, 1, 0.5, 0.1, '0.1', 0.2, 0.1]
+            test_parameters1 = [10, 1, 1, 0.5, 0.01, '0.01', 0.2, 0.1]
             model.simulate_fixed_times(test_parameters1, 1, 50)
 
         with self.assertRaises(ValueError):
-            test_parameters1 = [10, 1, 1, 0.5, 0.1, -0.1, 0.2, 0.1]
+            test_parameters1 = [10, 1, 1, 0.5, 0.01, -0.01, 0.2, 0.1]
             model.simulate_fixed_times(test_parameters1, 1, 50)
 
         with self.assertRaises(TypeError):
-            test_parameters1 = [10, 1, 1, 0.5, 0.1, 0.1, '0.2', 0.1]
+            test_parameters1 = [10, 1, 1, 0.5, 0.01, 0.01, '0.2', 0.1]
             model.simulate_fixed_times(test_parameters1, 1, 50)
 
         with self.assertRaises(ValueError):
-            test_parameters1 = [10, 1, 1, 0.5, 0.1, 0.1, 0.2, -0.1]
+            test_parameters1 = [10, 1, 1, 0.5, 0.01, 0.01, 0.2, -0.1]
             model.simulate_fixed_times(test_parameters1, 1, 50)
