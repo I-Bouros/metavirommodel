@@ -1,36 +1,34 @@
-# Renewal Models for vector-borne diseases
+# Metavirommodel: Metaviromic-informed epidemiological models for rodent infectious
 
-[![Run Unit Tests on multiple OS](https://github.com/SABS-R3-Epidemiology/metavirommodel/actions/workflows/os-unittests.yml/badge.svg)](https://github.com/SABS-R3-Epidemiology/metavirommodel/actions/workflows/os-unittests.yml)
-[![Run Unit Tests on multiple python versions](https://github.com/SABS-R3-Epidemiology/metavirommodel/actions/workflows/python-version-unittests.yml/badge.svg)](https://github.com/SABS-R3-Epidemiology/metavirommodel/actions/workflows/python-version-unittests.yml)
-[![Documentation Status](https://readthedocs.org/projects/metavirommodel/badge/?version=latest)](https://metavirommodel.readthedocs.io/en/latest/?badge=latest)
-[![codecov](https://codecov.io/gh/SABS-R3-Epidemiology/metavirommodel/branch/main/graph/badge.svg?token=UBJG0AICF9)](https://codecov.io/gh/SABS-R3-Epidemiology/metavirommodel/)
-[![DOI](https://zenodo.org/badge/305988905.svg)](https://doi.org/10.5281/zenodo.14166376)
+[![Run Unit Tests on multiple OS](https://github.com/I-Bouros/metavirommodel/actions/workflows/os-unittests.yml/badge.svg)](https://github.com/I-Bouros/metavirommodel/actions/workflows/os-unittests.yml)
+[![Run Unit Tests on multiple python versions](https://github.com/I-Bouros/metavirommodel/actions/workflows/python-version-unittests.yml/badge.svg)](https://github.com/I-Bouros/metavirommodel/actions/workflows/python-version-unittests.yml)
+[![Documentation status](https://github.com/I-Bouros/metavirommodel/actions/workflows/doctest.yml/badge.svg)](https://github.com/I-Bouros/metavirommodel/actions/workflows/doctest.yml)
+[![codecov](https://codecov.io/gh/I-Bouros/metavirommodel/branch/main/graph/badge.svg?token=UBJG0AICF9)](https://codecov.io/gh/I-Bouros/metavirommodel/)
 
-In this package, we use branching processes to model the time-dependent reproduction number (the number of cases each infected individual will subsequently cause) of an infectious disease.
+In this package, we use metaviromic data, in the form of both Ct values and viral read load counts to the infer infectious disease dynamics in wildlife populations of rodents for a multitude of environmental and ecological contexts, such as:
+- constant, logistic and exponential birth rates;
+- precipitiation-  or season-dependent birth rates of susceptible rodents [1] [2];
+- multiple-species ecological models, when an additional predator species is also modelled, using Lotka-Volterra population dynamics [3].
 
 All features of our software are described in detail in our
-[full API documentation](https://metavirommodel.readthedocs.io/en/latest/).
+[full API documentation](https://metavirommodel.readthedocs.io/en/latest/). 
 
-A web app for performing inference for branching process models is included in this package. Instructions for accessing the app are available [here](https://sabs-r3-epidemiology.github.io/metavirommodel/).
-
-More details on branching process models and inference can be found in these
-papers:
+More details on metaviromic-informed epidemic models and inference can be found in these papers:
 
 ## References
 
 [1]
-R. Creswell,<sup>†</sup> D. Augustin,<sup>†</sup> I. Bouros,<sup>†</sup> H. J. Farm,<sup>†</sup> S. Miao,<sup>†</sup> A. Ahern,<sup>†</sup> M. Robinson, A. Lemenuel-Diot, D. J. Gavaghan, B. C. Lambert and R. N. Thompson: “Heterogeneity in the onwards transmission risk between local and imported cases affects practical estimates of the time-dependent reproduction number,” <em>Phil. Trans. R. Soc. A.</em> 380: 20210308 (2022).
+Nuismer SL, Remien CH, Basinski AJ, Varrelman T, Layman N, Rosenke K, et al. _Bayesian estimation of Lassa virus epidemiological parameters: Implications for spillover prevention using wildlife vaccination_. PLoS Negl Trop Dis
+14(9): **e0007920** (2020). DOI:10.1371/journal.pntd.0007920
 
 [2]
-Cori A, Ferguson NM, Fraser C, Cauchemez S. (2013). A new framework and
-software to estimate time-varying reproduction numbers during epidemics.
-American Journal of Epidemiology 178(9): 1505-12.
+Diana Erazo et al., _Who acquires infection from whom? Estimating herpesvirus transmission rates between wild rodent host groups_. Epidemics35(2021). DOI:10.1016/j.epidem.2021.100451
 
 [3]
-Thompson RN, Stockwin JE, van Gaalen RD, Polonsky JA, Kamvar ZN, Demarsh PA,
-Dahlqwist E, Li S, Miguel E, Jombart T, Lessler J. (2019). Improved inference of
-time-varying reproduction numbers during infectious disease outbreaks.
-Epidemics 29: 100356.
+Hanski, I., E. Korpima¨ki., _Microtine rodent dynamics in northern Europe: parameterized models for the predator-prey interaction_. Ecology 76:840–850 (1995). DOI:10.2307/1939349
+
+[4]
+James A. Hay et al., _Estimating epidemiologic dynamics from cross-sectional viral load distributions_. Science373,**eabh0635(2021)**. DOI:10.1126/science.abh0635
 
 ## Installation procedure
 
@@ -38,7 +36,7 @@ Epidemics 29: 100356.
 One way to install the module is to download the repositiory to your machine of choice and type the following commands in the terminal.
 
 ```bash
-git clone https://github.com/SABS-R3-Epidemiology/metavirommodel.git
+git clone https://github.com/I-Bouros/metavirommodel.git
 cd ../path/to/the/file
 ```
 
@@ -54,32 +52,29 @@ pip install -e .
 import metavirommodel
 import numpy as np
 
-# create a simple branching process model with prescribed initial R and serial interval
-metavirommodel.metavirommodelModel(initial_r=0.5, serial_interval=[0, 0.15, 0.52, 0.3, 0.01])
+# create a simple stochastic SIR compartmental model with precipitation-dependent growth rate
+# run forward simulation with prescribed rates and initial population compartment sizes
+algorithm = metavirommodel.Metaviromodel()
 
-# create branching process model with local and imported cases with prescribed initial R
-# and serial interval
-# set imported cases data
-libr_model_1 = metavirommodel.LocImpmetavirommodelModel(
-  initial_r=2, serial_interval=np.array([1, 2, 3, 2, 1]), epsilon=1)
-libr_model_1.set_imported_cases(times=[1, 2.0, 4, 8], cases=[5, 10, 9, 2])
+precipitation_data = pd.read_csv(os.path.join('../../data/precipitation/Precipitation.csv'))
+theta = metavirommodel.BirthRatePrec(precipitation_data, parameters=[0.7, 2.8, 30])
 
-# create the posterior of a branching process model for multiple daily serial intervals
-# and incidence data contained in the dataframe df; prior distribution is Gamma with
-# parameters alpha and beta (shape, rate)
-metavirommodel.metavirommodelPosteriorMultSI(
-  inc_data=df, daily_serial_intervals=[[1, 2], [0, 1]], alpha=1, beta=0.2)
+algorithm.simulate_fixed_times(parameters=[380, 20, 0, theta, 0, 0, 0.2, 0.66], start_time=1, end_time=300)
+
+# create a simple stochastic SIR compartmental model with logistic growth rate
+# run forward simulation with prescribed rates and initial population compartment sizes
+logistic_algorithm = mm.LogisticGrowthMetaviromodel(carrying_capacity=400)
+logistic_algorithm.simulate_fixed_times(parameters=[380, 20, 0, 0.05, 0, 0, 0.2, 0.66], start_time=1, end_time=300)
+
+# create the posterior controller class of a stochastic SIR compartmental model for viral read count data contained in the dataframe df and for prescribed generation time distribution in the list generation_times;
+# and run a sampling algorithm inference routine
+posterior = metavirommodel.inference.MVRVirReadInfer(model=model, generation_times= generation_times)
+
+posterior.read_viral_read_data(df, parameters_vl=[3, 7, 5, 15, np.inf, 2, 3880, 480, 2, 0.4, 0.25])
+posterior.inference_problem_setup(num_iter=1000)
 ```
 
-More examples on how to use the classes and features included in this repository can be found [here](https://github.com/SABS-R3-Epidemiology/metavirommodel/tree/main/examples).
-
-## Multiple group population models
-
-In their most basic form, the branching processes modelling approach assume that all previous infections occurring on the same day contribute in equal measure to the present incidence of infection. However, this assumption is not generally true for most epidemic scenarios, where different population groups share different epidemic burdens. 
-
-Therefore, we have now extendend the metavirommodel package to offer users the possibility to run both running forward simulation and perform Rt inference for both the overall and group-specific reproduction numbers using a multiple-group population branching process. The approach implemented bypasses the need to use the next-generation matrix approach, as detailed in our [preprint]().
-
-To recreate our analyses for the suitability of multiple group renewal equations and Rt inference, please rerun the notebooks found [here](https://github.com/SABS-R3-Epidemiology/metavirommodel/tree/main/metavirommodel/results/heterogeneity).
+To recreate our analyses for the suitability of multiple group renewal equations and Rt inference, please rerun the notebooks found [here](https://github.com/I-Bouros/metavirommodel/tree/main/metavirommodel/results).
 
 ## Contributing
 

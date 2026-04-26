@@ -49,6 +49,41 @@ class Environment(object):
         raise NotImplementedError
 
 
+class Seasonal_birth_rate(object):
+    """
+    Function to calculate the season-dependent birth rate at time t.
+
+    """
+    def __init__(self, b0, w):
+        super(Seasonal_birth_rate, self).__init__()
+
+        self.b0 = b0
+        self.w = w
+
+    def __call__(self, t):
+        return np.abs(
+            self.b0 * np.sin(2*math.pi*(np.floor(t/7)/26 - self.w))) + \
+            self.b0 * np.sin(2*math.pi*(np.floor(t/7)/26 - self.w))
+
+
+class Prec_birth_rate(object):
+    """
+    Function to calculate the precipitation-dependent birth rate at time t.
+
+    """
+    def __init__(self, bM, rho, avg_prec):
+        super(Prec_birth_rate, self).__init__()
+
+        self.bM = bM
+        self.rho = rho
+        self.avg_prec = avg_prec
+
+    def __call__(self, t):
+        return self.bM * self.avg_prec[
+            np.floor(t).astype(int)-1] / (self.rho + self.avg_prec[
+                np.floor(t).astype(int)-1])
+
+
 class BirthRatePrec(Environment):
     r"""
 
@@ -171,9 +206,7 @@ class BirthRatePrec(Environment):
         birth rate phase used to compute the birth rate.
 
         """
-        self.birth_rate = lambda t: self.bM * self.avg_prec[
-            np.floor(t).astype(int)-1] / (self.rho + self.avg_prec[
-                np.floor(t).astype(int)-1])
+        self.birth_rate = Prec_birth_rate(self.bM, self.rho, self.avg_prec)
 
     def __call__(self, t_cal):
         """
@@ -243,9 +276,7 @@ class BirthRateSeason(Environment):
 
         """
 
-        self.birth_rate = lambda t: np.abs(
-            self.b0 * np.sin(2*math.pi*(np.floor(t/7)/52 - self.w))) + \
-            self.b0 * np.sin(2*math.pi*(np.floor(t/7)/52 - self.w))
+        self.birth_rate = Seasonal_birth_rate(self.b0, self.w)
 
     def __call__(self, t_cal):
         """

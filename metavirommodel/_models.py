@@ -1,13 +1,32 @@
 #
+# Metaviromodel Class
+#
 # This file is part of metavirommodel
 # (https://github.com/I-Bouros/metavirommodel)
 # which is released under the BSD 3-clause license. See accompanying LICENSE.md
 # for copyright notice and full license details.
 #
+"""
+This script contains code for modelling the between-host dynamics of viral
+transmission in mice using an SIR agent-based modellling framework.
+
+"""
 
 import numpy as np
 import pints
 from scipy.stats import uniform, gumbel_r, gumbel_l
+
+
+class constant_func(object):
+    """
+    A function that returns the same value for all called values.
+    """
+    def __init__(self, param):
+        super(constant_func, self).__init__()
+        self.param = param
+
+    def __call__(self, x):
+        return self.param
 
 
 class Metaviromodel(pints.ForwardModel):
@@ -15,11 +34,11 @@ class Metaviromodel(pints.ForwardModel):
     Base class for the forward simulation of the epidemic transmission dynamic
     of a population of rodents.
 
-    Three types of individuals are considered based on their seroligcal status
+    Three types of individuals are considered based on their serological status
     - susceptible individuals (S), infectious (I) and recovered (R).
 
     Susceptible individuals are born at a constant rate and die at the same
-    rate as those recovered. A different death rate due to diesease is
+    rate as those recovered. A different death rate due to disease is
     considered for the infected individuals. A susceptible individuals goes on
     to become infected at a constant rate.
 
@@ -178,7 +197,9 @@ class Metaviromodel(pints.ForwardModel):
 
         self.N = sum((i_S, i_I, i_R))
 
+        new_susc = 0
         new_infec = 0
+        new_rec = 0
 
         # Compute propensities
         if self.N > 0:
@@ -200,24 +221,35 @@ class Metaviromodel(pints.ForwardModel):
             tau = np.log(1/u1) / np.sum(propens)
 
             if u < sum_propens[0]:
+                # Susceptible becomes infected
                 i_S += -1
                 i_I += 1
+                new_susc = -1
                 new_infec = 1
             elif (u >= sum_propens[0]) and (u < sum_propens[1]):
+                # Infected becomes recovered
                 i_I += -1
                 i_R += 1
                 new_infec = -1
+                new_rec = 1
             elif (u >= sum_propens[1]) and (u < sum_propens[2]):
+                # New susceptible
                 i_S += 1
+                new_susc = 1
             elif (u >= sum_propens[2]) and (u < sum_propens[3]):
+                # Susceptible dies
                 i_S += -1
+                new_susc = -1
             elif (u >= sum_propens[3]) and (u < sum_propens[4]):
+                # Infected dies
                 i_I += -1
                 new_infec = -1
             else:
+                # Recovered dies
                 i_R += -1
+                new_rec = -1
 
-        return (tau, i_S, i_I, i_R, new_infec)
+        return (tau, i_S, i_I, i_R, new_susc, new_infec, new_rec)
 
     def gillespie_algorithm_fixed_times(self, start_time, end_time):
         """
@@ -241,14 +273,28 @@ class Metaviromodel(pints.ForwardModel):
 
         large_solution = []
         time_solution = []
+
+        susc_history = []
         infect_history = []
+        recov_history = []
+
         infect_times_history = []
+        recov_infect_times_history = []
+
         solution = np.empty((interval, 3), dtype=np.integer)
+        S_history = []
         I_history = []
+        R_history = []
+
         I_times_history = []
+        R_times_history = []
 
         current_time = start_time
+        new_susc = 0
         new_infec = 0
+        new_rec = 0
+        self.last_used_id = i_S + i_I + i_R + 1
+        infec_incidence = []
 
         while current_time <= end_time:
             time_solution.append(float(current_time))
@@ -257,9 +303,14 @@ class Metaviromodel(pints.ForwardModel):
             if len(infect_history) > 0:
                 # If an infection disappears
                 if new_infec == -1:
+                    infec_incidence.append(infec_incidence[-1])
                     # Read in the last structure of infections
+                    current_susceptibles = susc_history[-1]
                     current_infections = infect_history[-1]
+                    current_recovered = recov_history[-1]
+
                     current_infec_times = infect_times_history[-1]
+                    current_recov_infec_times = recov_infect_times_history[-1]
 
                     # Select infection to disappear using a multinomial
                     # distribution
@@ -270,7 +321,8 @@ class Metaviromodel(pints.ForwardModel):
                     else:
                         elim_infec = np.random.choice(
                             range(len(current_infections)),
-                            p=weights/np.sum(weights))
+                            p=weights/np.sum(weights)
+                            )
 
                     # Eliminate infection
                     new_current_infections = current_infections[
@@ -278,43 +330,121 @@ class Metaviromodel(pints.ForwardModel):
                     new_current_infec_times = current_infec_times[
                         :elim_infec] + current_infec_times[(elim_infec+1):]
 
+                    susc_history.append(current_susceptibles)
                     infect_history.append(new_current_infections)
+
                     infect_times_history.append(new_current_infec_times)
+
+                    if new_rec == 1:
+                        # The infection becomes recovered
+                        new_current_recovered = current_recovered + \
+                            [current_infections[elim_infec]]
+                        recov_history.append(new_current_recovered)
+
+                        new_current_recov_infec_times = \
+                            current_recov_infec_times + \
+                            [current_infec_times[elim_infec]]
+                        recov_infect_times_history.append(
+                            new_current_recov_infec_times)
+                    else:
+                        # The infection dies
+                        recov_history.append(current_recovered)
+                        recov_infect_times_history.append(
+                            current_recov_infec_times)
+
                 # If a new infection occurs in the step
                 elif new_infec == 1:
                     # Read in the last structure of infections and add new
                     # infection to the timeline
-                    current_infections = infect_history[-1] + [1]
+                    current_susceptibles = susc_history[-1][:-1]
+                    current_infections = infect_history[-1] + \
+                        [susc_history[-1][-1]]
+                    current_recovered = recov_history[-1]
                     current_infec_times = infect_times_history[-1] + \
                         [float(current_time)]
+                    current_recov_infec_times = recov_infect_times_history[-1]
 
+                    susc_history.append(current_susceptibles)
                     infect_history.append(current_infections)
+                    recov_history.append(current_recovered)
+
                     infect_times_history.append(current_infec_times)
+                    recov_infect_times_history.append(
+                            current_recov_infec_times)
+
+                    infec_incidence.append(infec_incidence[-1]+[1])
                 # If no change in infections occurs in the step
                 else:
+                    infec_incidence.append(infec_incidence[-1])
                     # Read in the last structure of infections
+                    current_susceptibles = susc_history[-1]
                     current_infections = infect_history[-1]
+                    current_recovered = recov_history[-1]
                     current_infec_times = infect_times_history[-1]
+                    current_recov_infec_times = recov_infect_times_history[-1]
 
+                    if new_susc == 1:
+                        # New suceptible
+                        current_susceptibles.append(self.last_used_id + 1)
+                        self.last_used_id += 1
+                    if new_susc == -1:
+                        # A susceptible dies
+                        current_susceptibles = current_susceptibles[:-1]
+
+                    if new_rec == -1:
+                        # A recovered dies
+                        current_recovered = current_recovered[:-1]
+                        current_recov_infec_times = \
+                            current_recov_infec_times[:-1]
+
+                    susc_history.append(current_susceptibles)
                     infect_history.append(current_infections)
-                    infect_times_history.append(current_infec_times)
-            else:
-                infect_history.append([1] * i_I)
-                infect_times_history.append([0] * i_I)
+                    recov_history.append(current_recovered)
 
-            tau, i_S, i_I, i_R, new_infec = self.one_step_gillespie(
-                current_time + self._cal_delay, i_S, i_I, i_R)
+                    infect_times_history.append(current_infec_times)
+                    recov_infect_times_history.append(
+                            current_recov_infec_times)
+            else:
+                susc_history.append([1+id for id in range(i_S)])
+                infect_history.append([1+id for id in range(i_S, i_S+i_I)])
+                recov_history.append(
+                    [1+id for id in range(i_S+i_I, i_S+i_I+i_R)])
+
+                infec_incidence.append([])
+
+                infect_times_history.append(
+                    [0 for _ in range(i_S, i_S+i_I)])
+                recov_infect_times_history.append(
+                    [0 for _ in range(i_S+i_I, i_S+i_I+i_R)])
+
+            tau, i_S, i_I, i_R, new_susc, new_infec, new_rec = \
+                self.one_step_gillespie(
+                    current_time + self._cal_delay, i_S, i_I, i_R)
 
             current_time += tau
 
+        self.infect_incidence = np.zeros(interval)
         # Keep only integer timepoints solutions
         for t in range(interval):
             pos = np.where(np.asarray(time_solution) <= times[t])
             solution[t, :] = large_solution[pos[-1][-1]]
-            I_history.append(infect_history[pos[-1][-1]])
-            I_times_history.append(infect_times_history[pos[-1][-1]])
 
-        return solution, I_history, I_times_history
+            S_history.append(susc_history[pos[-1][-1]])
+            I_history.append(infect_history[pos[-1][-1]])
+            R_history.append(recov_history[pos[-1][-1]])
+
+            I_times_history.append(infect_times_history[pos[-1][-1]])
+            R_times_history.append(recov_infect_times_history[pos[-1][-1]])
+
+            if t > 0:
+                previous_pos = np.where(
+                    np.asarray(time_solution) <= times[t-1])
+
+                self.infect_incidence[t] = len(infec_incidence[
+                    pos[-1][-1]]) - len(infec_incidence[previous_pos[-1][-1]])
+
+        return (solution, S_history, I_history, R_history,
+                I_times_history, R_times_history)
 
     def ct_model(self, parameters_ct, t):
         r"""
@@ -355,6 +485,81 @@ class Metaviromodel(pints.ForwardModel):
         s_mod, sigma_obs = parameters_ct[9:]
 
         # Identify current value of the first distribution parameter
+        c_mode_t = self._compute_mode_ct_model(
+            t, t_eclipse, t_peak, t_switch, t_LOD,
+            c_zero, c_peak, c_switch, c_LOD)
+
+        # Identify current value of the second distribution parameter
+        sigma_t = self._compute_sigma_ct_model(
+            t, t_eclipse, t_peak, t_switch, t_mod, s_mod, sigma_obs)
+
+        # Draw Ct value from from a Gumbel dist Ct ~ (C_mode_t, sigma_t)
+        Ct_value = gumbel_r.rvs(c_mode_t, sigma_t)
+
+        if Ct_value > c_zero:
+            Ct_value = c_zero  # capped if we get abnormal Ct value
+        return Ct_value
+
+    def ct_likelihood(self, Ct_value, parameters_ct, t):
+        r"""
+        Sample the corresponding Ct value for an infected individual with
+        respect to its time since infection.
+
+        Parameters
+        ----------
+        Ct_value
+            (int or float) Observed Ct value.
+        parameters_ct
+            (list) List of parameters governing the Ct value model dynamics:
+            the times from infection to initial viral growth (t_eclipse),
+            from initial viral growth to peak viral load (t_peak), from peak
+            viral load to secondary waning phase (t_switch), from secondary
+            waning phase until Gumbel distribution reaches its minimum scale
+            parameter (t_mod) and finally from infection until modal Ct value
+            is equal to the limit of detection (t_LOD), the Ct values
+            associated with the time of infection (c_zero), peak viral load
+            (c_peak), the debut of the secondary waning phase at
+            :math:`t_eclipse + t_peak + t_switch` (c_switch) and the limit
+            of detection of Ct value (c_LOD), the multiplicative factor
+            applied to scale parameter for the Gumbel distribution starting at
+            time :math:`t_eclipse + t_peak + t_switch + t_scale` (s_mod), and
+            the initial scale parameter for the Gumbel distribution until time
+            :math:`t_eclipse + t_peak + t_switch` (sigma_obs) respectively.
+        t
+            (float) time since infection of the individuals for which we
+            observe its Ct value.
+
+        """
+        # Read times of main points of behaviour change
+        t_eclipse, t_peak, t_switch, t_mod, t_LOD = parameters_ct[:5]
+
+        # Read Ct values associated with main points of
+        # behaviour change
+        c_zero, c_peak, c_switch, c_LOD = parameters_ct[5:9]
+
+        # Read scale-specific parameters
+        s_mod, sigma_obs = parameters_ct[9:]
+
+        # Identify current value of the first distribution parameter
+        c_mode_t = self._compute_mode_ct_model(
+            t, t_eclipse, t_peak, t_switch, t_LOD,
+            c_zero, c_peak, c_switch, c_LOD)
+
+        # Identify current value of the second distribution parameter
+        sigma_t = self._compute_sigma_ct_model(
+            t, t_eclipse, t_peak, t_switch, t_mod, s_mod, sigma_obs)
+
+        # Compute log-likeliooh of viral read value from from a Gumbel dist
+        # Ct ~ (C_mode_t, sigma_t)
+        return gumbel_r.logpdf(Ct_value, c_mode_t, sigma_t)
+
+    def _compute_mode_ct_model(self, t, t_eclipse, t_peak, t_switch, t_LOD,
+                               c_zero, c_peak, c_switch, c_LOD):
+        """
+        Compute the mode of the probability distribution used to determine
+        observed Ct value based on the time since infection.
+
+        """
         if t <= t_eclipse:
             c_mode_t = c_zero
         elif (t_eclipse < t) and (t <= t_eclipse + t_peak):
@@ -369,7 +574,15 @@ class Metaviromodel(pints.ForwardModel):
                 t_LOD - t_switch - t_peak - t_eclipse)) * (
                 t - t_eclipse - t_peak - t_switch)
 
-        # Identify current value of the second distribution parameter
+        return c_mode_t
+
+    def _compute_sigma_ct_model(self, t, t_eclipse, t_peak, t_switch, t_mod,
+                                s_mod, sigma_obs):
+        """
+        Compute the variance of the probability distribution used to determine
+        observed Ct value based on the time since infection.
+
+        """
         if (t < (t_eclipse + t_peak + t_switch)):
             sigma_t = sigma_obs
         elif (((t_eclipse + t_peak + t_switch) <= t) and (t < (
@@ -379,12 +592,7 @@ class Metaviromodel(pints.ForwardModel):
         elif (((t_eclipse + t_peak + t_mod) <= t)):
             sigma_t = sigma_obs * s_mod
 
-        # Draw Ct value from from a Gumbel dist Ct ~ (C_mode_t, sigma_t)
-        Ct_value = gumbel_r.rvs(c_mode_t, sigma_t)
-
-        if Ct_value > c_zero:
-            Ct_value = c_zero  # capped if we get abnormal Ct value
-        return Ct_value
+        return sigma_t
 
     def viral_read_model(self, parameters_vl, t):
         r"""
@@ -426,6 +634,83 @@ class Metaviromodel(pints.ForwardModel):
         s_mod, sigma_obs = parameters_vl[9:]
 
         # Identify current value of the first distribution parameter
+        v_mode_t = self._compute_mode_vr_model(
+            t, t_eclipse, t_peak, t_switch, t_LOD,
+            np.log(v_zero), np.log(v_peak), np.log(v_switch), np.log(v_LOD))
+
+        # Identify current value of the second distribution parameter
+        sigma_t = self._compute_sigma_vr_model(
+            t, t_eclipse, t_peak, t_switch, t_mod, s_mod, sigma_obs)
+
+        # Draw viral read value from from a log-Gumbel dist
+        # VR ~ (V_mode_t, sigma_t)
+        VR_value = np.exp(gumbel_l.rvs(v_mode_t, sigma_t))
+
+        if VR_value < 0:
+            VR_value = 0  # capped if we get abnormal VR value
+        return VR_value
+
+    def viral_read_likelihood(self, VR_value, parameters_vl, t):
+        r"""
+        Sample the corresponding viral read count for an infected individual
+        with respect to its time since infection.
+
+        Parameters
+        ----------
+        VR_value
+            (int or float) Observed viral read count.
+        parameters_vl
+            (list) List of parameters governing the viral read count model
+            dynamics: the times from infection to initial viral growth
+            (t_eclipse), from initial viral growth to peak viral load (t_peak),
+            from peak viral load to secondary waning phase (t_switch), from
+            secondary waning phase until Gumbel distribution reaches its
+            minimum scale parameter (t_mod) and finally from infection until
+            modal viral read count is equal to the limit of detection (t_LOD),
+            the viral read counts associated with the time of infection
+            (v_zero), peak viral load (v_peak), the debut of the secondary
+            waning phase at :math:`t_eclipse + t_peak + t_switch` (v_switch)
+            and the limit of detection of viral read count (v_LOD), the
+            multiplicative factor applied to scale parameter for the Gumbel
+            distribution starting at time :math:`t_eclipse + t_peak + t_switch
+            + t_scale` (s_mod), and the initial scale parameter for the Gumbel
+            distribution until time :math:`t_eclipse + t_peak + t_switch`
+            (sigma_obs) respectively.
+        t
+            (float) time since infection of the individual for which we
+            observe its viral read count.
+
+        """
+        # Read times of main points of behaviour change
+        t_eclipse, t_peak, t_switch, t_mod, t_LOD = parameters_vl[:5]
+
+        # Read viral read count values associated with main points of
+        # behaviour change
+        v_zero, v_peak, v_switch, v_LOD = parameters_vl[5:9]
+
+        # Read scale-specific parameters
+        s_mod, sigma_obs = parameters_vl[9:]
+
+        # Identify current value of the first distribution parameter
+        v_mode_t = self._compute_mode_vr_model(
+            t, t_eclipse, t_peak, t_switch, t_LOD,
+            np.log(v_zero), np.log(v_peak), np.log(v_switch), np.log(v_LOD))
+
+        # Identify current value of the second distribution parameter
+        sigma_t = self._compute_sigma_vr_model(
+            t, t_eclipse, t_peak, t_switch, t_mod, s_mod, sigma_obs)
+
+        # Compute log-likeliooh of viral read value from from a log-Gumbel dist
+        # VR ~ (V_mode_t, sigma_t)
+        return gumbel_l.logpdf(np.log(VR_value), v_mode_t, sigma_t)
+
+    def _compute_mode_vr_model(self, t, t_eclipse, t_peak, t_switch, t_LOD,
+                               v_zero, v_peak, v_switch, v_LOD):
+        """
+        Compute the mode of the probability distribution used to determine
+        observed viral read counts based on the time since infection.
+
+        """
         if t <= t_eclipse:
             v_mode_t = v_zero
         elif (t_eclipse < t) and (t <= t_eclipse + t_peak):
@@ -440,7 +725,15 @@ class Metaviromodel(pints.ForwardModel):
                 t_LOD - t_switch - t_peak - t_eclipse)) * (
                 t - t_eclipse - t_peak - t_switch)
 
-        # Identify current value of the second distribution parameter
+        return v_mode_t
+
+    def _compute_sigma_vr_model(self, t, t_eclipse, t_peak, t_switch, t_mod,
+                                s_mod, sigma_obs):
+        """
+        Compute the variance of the probability distribution used to determine
+        observed viral read counts based on the time since infection.
+
+        """
         if (t < (t_eclipse + t_peak + t_switch)):
             sigma_t = sigma_obs
         elif (((t_eclipse + t_peak + t_switch) <= t) and (t < (
@@ -450,13 +743,14 @@ class Metaviromodel(pints.ForwardModel):
         elif (((t_eclipse + t_peak + t_mod) <= t)):
             sigma_t = sigma_obs * s_mod
 
-        # Draw viral read value from from a Gumbel dist
-        # VR ~ (V_mode_t, sigma_t)
-        VR_value = gumbel_l.rvs(v_mode_t, sigma_t)
+        return sigma_t
 
-        if VR_value < 0:
-            VR_value = 0  # capped if we get abnormal VR value
-        return VR_value
+    def get_incidence_of_infection(self):
+        """
+        Returns the vector of daily new incidence of infections.
+
+        """
+        return np.asarray(self.infect_incidence)
 
     def simulate_fixed_times(
             self, parameters, start_time, end_time, calendar_date=None):
@@ -494,12 +788,14 @@ class Metaviromodel(pints.ForwardModel):
         else:
             self._cal_delay = calendar_date
 
-        sol, I_history, I_times_history = self.gillespie_algorithm_fixed_times(
-            start_time, end_time)
+        (sol, S_history, I_history, R_history,
+         I_times_history, R_times_history) = \
+            self.gillespie_algorithm_fixed_times(start_time, end_time)
 
         output = sol
 
-        return output, I_history, I_times_history
+        return (output, S_history, I_history, R_history,
+                I_times_history, R_times_history)
 
     def _check_times(self, start_time, end_time):
         """
@@ -531,7 +827,7 @@ class Metaviromodel(pints.ForwardModel):
         # birth rates
         if isinstance(parameters[3], (float, int)):
             # Same birth rate for every day of the year
-            self.theta = lambda _: parameters[3]
+            self.theta = constant_func(parameters[3])
         else:
             self.theta = parameters[3]
 
@@ -539,13 +835,13 @@ class Metaviromodel(pints.ForwardModel):
         mu, nu = parameters[4:6]
         if isinstance(mu, (float, int)):
             # Same birth rate for every day of the year
-            self.mu_S = lambda _: mu
+            self.mu_S = constant_func(parameters[4])
         else:
             self.mu_S = mu
 
         if isinstance(nu, (float, int)):
             # Same birth rate for every day of the year
-            self.mu_I = lambda _: nu
+            self.mu_I = constant_func(parameters[5])
         else:
             self.mu_I = nu
 
@@ -592,3 +888,276 @@ class Metaviromodel(pints.ForwardModel):
                     'Transition rate must be integer or float.')
             if parameters[_] < 0:
                 raise ValueError('Transition rate must be => 0.')
+
+
+class LogisticGrowthMetaviromodel(Metaviromodel):
+    r"""LogisticGrowthMetaviromodel Class:
+    Base class for the forward simulation of the epidemic transmission dynamic
+    of a population of rodents when a logistic population growth is assumed.
+
+    Three types of individuals are considered based on their serological status
+    - susceptible individuals (S), infectious (I) and recovered (R).
+
+    Susceptible individuals are born according to a logistic growth model and
+    die at the same rate as those recovered. A different death rate due to
+    disease is considered for the infected individuals. A susceptible
+    individuals goes on to become infected at a constant rate.
+
+    The system of equations that describe the isolated possible events that can
+    occur
+
+    .. math::
+        :nowrap:
+
+        \begin{eqnarray}
+            S  &\xrightarrow{\beta} I \\
+            I  &\xrightarrow{\gamma} R \\
+            \emptyset  &\xrightarrow{rN(1-\frac{N}{K})} S \\
+            S &\xrightarrow{\mu} \emptyset \\
+            I &\xrightarrow{\nu} \emptyset \\
+            R &\xrightarrow{\mu} \emptyset
+        \end{eqnarray}
+
+    where :math:`\mu` and :math:`\nu` are the rates of natural death in
+    the susceptibles and recovered, and infectious respectively,
+    :math:`r` is the growth rate in the susceptibles and :math:`K` is the
+    rodent carrying capacity. :math:`\beta` is the transmission rate and
+    :math:`\gamma` is the recovery rate.
+
+    Parameters
+    ----------
+    carrying_capacity
+        (int, float or function) current carrying capacity according to
+        the calendar date.
+
+    """
+    def __init__(self, carrying_capacity):
+        super(LogisticGrowthMetaviromodel, self).__init__()
+
+        if isinstance(carrying_capacity, (float, int)):
+            # Same birth rate for every day of the year
+            self._carry_cap = constant_func(carrying_capacity)
+        else:
+            self._carry_cap = carrying_capacity
+
+    def one_step_gillespie(self, t_cal, i_S, i_I, i_R):
+        """
+        Computes one step in the Gillespie algorithm to determine the
+        counts of the different types of individuals present in the population
+        at present. Returns time to next reaction and the tuple state of the
+        system, as well as the type of reaction that occured.
+
+        Parameters
+        ----------
+        t_cal
+            (int) current time according to the calendar date.
+        i_S
+            (int) number of susceptibles (S) in the population at current time
+            point.
+        i_I
+            (int) number of infectious individuals (I) in the population at
+            current time point.
+        i_R
+            (int) number of recovered individuals (R) in the population at
+            current time point.
+
+        """
+        # Generate random number for reaction and time to next reaction
+        u, u1 = uniform.rvs(size=2)
+
+        self.N = sum((i_S, i_I, i_R))
+
+        new_susc = 0
+        new_infec = 0
+        new_rec = 0
+
+        # Compute propensities
+        if self.N > 0:
+            propens_1 = self.beta * i_S * i_I / self.N
+            propens_2 = self.gamma * i_I
+            propens_3 = self._logistic_growth(
+                t_cal, self._compute_theta(t_cal),
+                i_S + i_I + i_R, self._carry_cap)
+            propens_4 = self._compute_mu_S(t_cal) * i_S
+            propens_5 = self._compute_mu_I(t_cal) * i_I
+            propens_6 = self._compute_mu_S(t_cal) * i_R
+
+            propens = np.array([
+                propens_1, propens_2, propens_3, propens_4,
+                propens_5, propens_6])
+            sum_propens = np.empty(propens.shape)
+
+            for e in range(propens.shape[0]):
+                sum_propens[e] = np.sum(propens[:(e+1)]) / np.sum(propens)
+            # Time to next reaction
+            tau = np.log(1/u1) / np.sum(propens)
+
+            if u < sum_propens[0]:
+                # Susceptible becomes infected
+                i_S += -1
+                i_I += 1
+                new_susc = -1
+                new_infec = 1
+            elif (u >= sum_propens[0]) and (u < sum_propens[1]):
+                # Infected becomes recovered
+                i_I += -1
+                i_R += 1
+                new_infec = -1
+                new_rec = 1
+            elif (u >= sum_propens[1]) and (u < sum_propens[2]):
+                # New susceptible
+                i_S += 1
+                new_susc = 1
+            elif (u >= sum_propens[2]) and (u < sum_propens[3]):
+                # Susceptible dies
+                i_S += -1
+                new_susc = -1
+            elif (u >= sum_propens[3]) and (u < sum_propens[4]):
+                # Infected dies
+                i_I += -1
+                new_infec = -1
+            else:
+                # Recovered dies
+                i_R += -1
+                new_rec = -1
+
+        return (tau, i_S, i_I, i_R, new_susc, new_infec, new_rec)
+
+    def _logistic_growth(self, t_cal, theta, N, carrying_capacity):
+        """
+        Returns the logistic growth rate of the population dynamics
+        model.
+
+        Parameters
+        ----------
+        t_cal
+            (int) current time according to the calendar date.
+        theta
+            (int, float or function) current growth rate according to
+            the calendar date.
+        N
+            (int, float or function) current total population size according to
+            the calendar date.
+        carrying_capacity
+            (int, float or function) current carrying capacity according to
+            the calendar date.
+
+        """
+        return theta * N * (1 - N / carrying_capacity(t_cal))
+
+
+class ExponentialGrowthMetaviromodel(Metaviromodel):
+    r"""ExponentialGrowthMetaviromodel Class:
+    Base class for the forward simulation of the epidemic transmission dynamic
+    of a population of rodents when an exponential population growth is
+    assumed.
+
+    Three types of individuals are considered based on their serological status
+    - susceptible individuals (S), infectious (I) and recovered (R).
+
+    Susceptible individuals are born according to a logistic growth model and
+    die at the same rate as those recovered. A different death rate due to
+    disease is considered for the infected individuals. A susceptible
+    individuals goes on to become infected at a constant rate.
+
+    The system of equations that describe the isolated possible events that can
+    occur
+
+    .. math::
+        :nowrap:
+
+        \begin{eqnarray}
+            S  &\xrightarrow{\beta} I \\
+            I  &\xrightarrow{\gamma} R \\
+            \emptyset  &\xrightarrow{rN} S \\
+            S &\xrightarrow{\mu} \emptyset \\
+            I &\xrightarrow{\nu} \emptyset \\
+            R &\xrightarrow{\mu} \emptyset
+        \end{eqnarray}
+
+    where :math:`\mu` and :math:`\nu` are the rates of natural death in
+    the susceptibles and recovered, and infectious respectively,
+    :math:`r` is the growth rate in the susceptibles, :math:`\beta` is the
+    transmission rate and :math:`\gamma` is the recovery rate.
+
+    """
+    def one_step_gillespie(self, t_cal, i_S, i_I, i_R):
+        """
+        Computes one step in the Gillespie algorithm to determine the
+        counts of the different types of individuals present in the population
+        at present. Returns time to next reaction and the tuple state of the
+        system, as well as the type of reaction that occured.
+
+        Parameters
+        ----------
+        t_cal
+            (int) current time according to the calendar date.
+        i_S
+            (int) number of susceptibles (S) in the population at current time
+            point.
+        i_I
+            (int) number of infectious individuals (I) in the population at
+            current time point.
+        i_R
+            (int) number of recovered individuals (R) in the population at
+            current time point.
+
+        """
+        # Generate random number for reaction and time to next reaction
+        u, u1 = uniform.rvs(size=2)
+
+        self.N = sum((i_S, i_I, i_R))
+
+        new_susc = 0
+        new_infec = 0
+        new_rec = 0
+
+        # Compute propensities
+        if self.N > 0:
+            propens_1 = self.beta * i_S * i_I / self.N
+            propens_2 = self.gamma * i_I
+            propens_3 = self._compute_theta(t_cal) * self.N
+            propens_4 = self._compute_mu_S(t_cal) * i_S
+            propens_5 = self._compute_mu_I(t_cal) * i_I
+            propens_6 = self._compute_mu_S(t_cal) * i_R
+
+            propens = np.array([
+                propens_1, propens_2, propens_3, propens_4,
+                propens_5, propens_6])
+            sum_propens = np.empty(propens.shape)
+
+            for e in range(propens.shape[0]):
+                sum_propens[e] = np.sum(propens[:(e+1)]) / np.sum(propens)
+            # Time to next reaction
+            tau = np.log(1/u1) / np.sum(propens)
+
+            if u < sum_propens[0]:
+                # Susceptible becomes infected
+                i_S += -1
+                i_I += 1
+                new_susc = -1
+                new_infec = 1
+            elif (u >= sum_propens[0]) and (u < sum_propens[1]):
+                # Infected becomes recovered
+                i_I += -1
+                i_R += 1
+                new_infec = -1
+                new_rec = 1
+            elif (u >= sum_propens[1]) and (u < sum_propens[2]):
+                # New susceptible
+                i_S += 1
+                new_susc = 1
+            elif (u >= sum_propens[2]) and (u < sum_propens[3]):
+                # Susceptible dies
+                i_S += -1
+                new_susc = -1
+            elif (u >= sum_propens[3]) and (u < sum_propens[4]):
+                # Infected dies
+                i_I += -1
+                new_infec = -1
+            else:
+                # Recovered dies
+                i_R += -1
+                new_rec = -1
+
+        return (tau, i_S, i_I, i_R, new_susc, new_infec, new_rec)
