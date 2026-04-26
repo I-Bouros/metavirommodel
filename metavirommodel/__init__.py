@@ -24,4 +24,4 @@ from ._environment import (  # noqa
     BirthRateSeason)
 
 # Import inference submodule
-from . import inference  # noqa
+from .inference import *  # noqa
