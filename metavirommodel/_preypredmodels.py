@@ -211,7 +211,7 @@ class PreyPredMetaviromodel(mvr.LogisticGrowthMetaviromodel):
 
         """
         # Create timeline vector
-        times = np.arange(start_time, end_time+0.5, 1, dtype=np.int8)
+        times = np.arange(start_time, end_time+0.5, 1, dtype=np.int64)
         interval = end_time - start_time + 1
 
         # Split compartments into their types
@@ -227,7 +227,7 @@ class PreyPredMetaviromodel(mvr.LogisticGrowthMetaviromodel):
         infect_times_history = []
         recov_infect_times_history = []
 
-        solution = np.empty((interval, 4), dtype=np.int8)
+        solution = np.empty((interval, 4), dtype=np.int64)
         S_history = []
         I_history = []
         R_history = []
