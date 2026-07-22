@@ -97,7 +97,7 @@ class MVRVirReadLogLik(pints.LogLikelihood):
         t
             evaluation time
         """
-        # Compute vector of dectability of the ct_value a days after infection
+        # Compute vector of dectability of the vr_value a days after infection
         p_vector = np.asarray([self.__compute_vr_detectable_pcr(
             vr_value, a) for a in np.arange(1, self._A_max+1)])
 
@@ -178,7 +178,8 @@ class MVRVirReadLogLik(pints.LogLikelihood):
             a, t_eclipse, t_peak, t_switch, t_mod, s_mod, sigma_obs)
 
         # Compute the normalisning constant P(VR > V_LOD)
-        normalising_constant = 1 - gumbel_r.cdf(v_LOD, v_mode_t, sigma_t)
+        normalising_constant = 1 - gumbel_r.cdf(
+            np.log(v_LOD), v_mode_t, sigma_t)
 
         # Compute log-likelihood of viral read value from from a Gumbel dist
         # VR ~ (V_mode_t, sigma_t)

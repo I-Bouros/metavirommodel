@@ -14,7 +14,7 @@ transmission in mice using an SIR agent-based modellling framework.
 
 import numpy as np
 import pints
-from scipy.stats import uniform, gumbel_r, gumbel_l
+from scipy.stats import uniform, gumbel_r
 
 
 class constant_func(object):
@@ -644,7 +644,7 @@ class Metaviromodel(pints.ForwardModel):
 
         # Draw viral read value from from a log-Gumbel dist
         # VR ~ (V_mode_t, sigma_t)
-        VR_value = np.exp(gumbel_l.rvs(v_mode_t, sigma_t))
+        VR_value = np.exp(gumbel_r.rvs(v_mode_t, sigma_t))
 
         if VR_value < 0:
             VR_value = 0  # capped if we get abnormal VR value
@@ -700,9 +700,10 @@ class Metaviromodel(pints.ForwardModel):
         sigma_t = self._compute_sigma_vr_model(
             t, t_eclipse, t_peak, t_switch, t_mod, s_mod, sigma_obs)
 
-        # Compute log-likeliooh of viral read value from from a log-Gumbel dist
+        # Compute log-likelihood of viral read value from from a log-Gumbel
+        # dist
         # VR ~ (V_mode_t, sigma_t)
-        return gumbel_l.logpdf(np.log(VR_value), v_mode_t, sigma_t)
+        return gumbel_r.logpdf(np.log(VR_value), v_mode_t, sigma_t)
 
     def _compute_mode_vr_model(self, t, t_eclipse, t_peak, t_switch, t_LOD,
                                v_zero, v_peak, v_switch, v_LOD):

@@ -44,3 +44,5 @@ from .inference_viral_reads._inference_expo import (  # noqa
 from .inference_viral_reads._inference_preypred import (  # noqa
     PreyPredGrowthMVRVirReadLogLik,
     PreyPredGrowthMVRVirReadInfer)
+
+from .latin_hypercube_search import MVRHyperParameterSearch  # noqa
