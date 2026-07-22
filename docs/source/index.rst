@@ -6,12 +6,17 @@
 
 Welcome to metavirommodel's documentation!
 ==========================================
-The metavirommodel source code is hosted on GitHub_.
+This webpage contains all documentation for the current version of the metavirommodel package,
+including models for population and infection dynamics, code for analysing environmental data which leads to 
+temporal variations in the birth rates, as well as parameter inference scipts.
 
+The metavirommodel source code is hosted on GitHub_.
 
 .. toctree::
 
    models
+   environment
+   inference
 
 
 Search

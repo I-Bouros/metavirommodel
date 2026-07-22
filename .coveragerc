@@ -1,0 +1,5 @@
+[run]
+source = metavirommodel
+omit = 
+    metavirommodel/tests/*
+    metavirommodel/data/*

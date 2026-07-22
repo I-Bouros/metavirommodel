@@ -5,4 +5,23 @@
 # for copyright notice and full license details.
 #
 
-from ._models import Metaviromodel  # noqa
+# Import version info
+from .version_info import VERSION_INT, VERSION  # noqa
+
+# Import all model classes
+from ._models import (  # noqa
+    Metaviromodel,
+    LogisticGrowthMetaviromodel,
+    ExponentialGrowthMetaviromodel,
+    constant_func)
+
+from ._preypredmodels import PreyPredMetaviromodel  # noqa
+
+# Import all seasonality-specific classes
+from ._environment import (  # noqa
+    Environment,
+    BirthRatePrec,
+    BirthRateSeason)
+
+# Import inference submodule
+from .inference import *  # noqa

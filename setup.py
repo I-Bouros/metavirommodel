@@ -2,7 +2,7 @@
 # metavirommodel setuptools script
 #
 # This file is part of metavirommodel
-# (https://github.com/SABS-R3-Epidemiology/metavirommodel.git) which is
+# (https://github.com/I-Bouros/metavirommodel.git) which is
 # released under the BSD 3-clause license. See accompanying LICENSE.md
 # for copyright notice and full license details.
 #
@@ -12,7 +12,7 @@ from setuptools import setup, find_packages
 def get_version():
     """
     Get version number from the metavirommodel module.
-    The easiest way would be to just ``import metavirommodel ``, but note that this may  # noqa
+    The easiest way would be to just ``import metavirommodel``, but note that this may  # noqa
     fail if the dependencies have not been installed yet. Instead, we've put
     the version number in a simple version_info module, that we'll import here
     by temporarily adding the oxrse directory to the pythonpath using sys.path.
@@ -21,7 +21,7 @@ def get_version():
     import sys
 
     sys.path.append(os.path.abspath('metavirommodel'))
-    from version_info import VERSION as version
+    from version_info import VERSION as version  # noqa
     sys.path.pop()
 
     return version
@@ -42,7 +42,7 @@ setup(
     # Version
     version=get_version(),
 
-    description='This is a one-week project in which we are using branching processes to estimate the time-dependent reproduction number of a disease.',  # noqa
+    description='This library hosts a suite of models for rodent infection disease dynamics andtheir afferent parameter inference code, which uses maetaviromic data as information.',  # noqa
 
     long_description=get_readme(),
 
@@ -56,7 +56,7 @@ setup(
 
     maintainer_email='',
 
-    url='https://github.com/SABS-R3-Epidemiology/metavirommodel.git',
+    url='https://github.com/I-Bouros/metavirommodel.git',
 
     # Packages to include
     packages=find_packages(include=('metavirommodel', 'metavirommodel.*')),
@@ -70,7 +70,8 @@ setup(
         'pandas',
         'plotly',
         'scipy',
-        'pints'
+        'pints',
+        # 'wythamlogparser @ git+https://github.com/I-Bouros/wytham-logparser.git'  # noqa
     ],
     python_requires='>=3.9',
     extras_require={
